@@ -71,13 +71,11 @@ window.onload = function () {
         },
         move = function (dx, dy) {
                 // Move main element
-            var att = this.type == "ellipse" ? {cx: this.ox + dx, cy: this.oy + dy} : 
-                                               {x: this.ox + dx, y: this.oy + dy};
+            var att = {x: this.ox + dx, y: this.oy + dy};
             this.attr(att);
             
                 // Move paired element
-            att = this.pair.type == "ellipse" ? {cx: this.pair.ox + dx, cy: this.pair.oy + dy} : 
-                                               {x: this.pair.ox + dx, y: this.pair.oy + dy};
+            att = {x: this.pair.ox + dx, y: this.pair.oy + dy};
             this.pair.attr(att);            
             
                 // Move connections
@@ -87,28 +85,57 @@ window.onload = function () {
             r.safari();
         },
         up = function () {
-                // Fade original element on mouse up
+            // Fade original element on mouse up
             if (this.type != "text") this.animate({"fill-opacity": 0}, 500);
             
-                // Fade paired element on mouse up
+            // Fade paired element on mouse up
             if (this.pair.type != "text") this.pair.animate({"fill-opacity": 0}, 500);            
+
+            snapToGrid(this);
+            snapToGrid(this.pair);
         },
+
+        grid = [];
+        function snapToGrid(obj)
+        {
+          var n = null;
+
+          if (obj.type == "text") {
+            sy = 160;
+            ty = 150;
+          } else {
+            sy = 150;
+            ty = 160;
+          }
+
+          if (obj.getBBox().y != sy) {
+            att = {y: sy};
+            obj.attr(att);            
+            att = {y: ty};
+            obj.pair.attr(att);            
+            for (i = connections.length; i--;) {
+                r.connection(connections[i]);
+            }
+          }
+        }
+
         r = Raphael("holder", 640, 480),
+
         connections = [],
         shapes = [
                     r.rect(10, 100, 20, 20), // 0
                     r.rect(40, 100, 20, 20), // 1
                     r.rect(70, 100, 20, 20), // 2
-                    r.rect(10, 200, 20, 20), // 3
-                    r.rect(40, 200, 20, 20), // 4
-                    r.rect(70, 200, 20, 20)  // 5
+                    r.rect(10, 150, 20, 20), // 3
+                    r.rect(40, 150, 20, 20), // 4
+                    r.rect(70, 150, 20, 20)  // 5
                 ],
-        texts = [   r.text(10, 100, "1"),
-                    r.text(40, 100, "2"),
-                    r.text(70, 100, "3"),
-                    r.text(10, 200, "1"),
-                    r.text(40, 200, "2"),
-                    r.text(70, 200, "3")
+        texts = [   r.text(20, 110, "1"),
+                    r.text(50, 110, "2"),
+                    r.text(80, 110, "3"),
+                    r.text(20, 160, "1"),
+                    r.text(50, 160, "2"),
+                    r.text(80, 160, "3")
                 ];
     for (i = 0, ii = shapes.length; i < ii; i++) {
         color = Raphael.getColor();
@@ -121,9 +148,10 @@ window.onload = function () {
         tempS.pair = tempT;
         tempT.pair = tempS;
     }
+
     connections.push(r.connection(shapes[0], shapes[3], "#fff"));
     connections.push(r.connection(shapes[1], shapes[4], "#fff"));
     connections.push(r.connection(shapes[2], shapes[5], "#fff"));
 
-
+    r.rect(10, 150, 80, 20);
 };
