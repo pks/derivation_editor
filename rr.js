@@ -5,42 +5,12 @@ Raphael.fn.connection = function (obj1, obj2, line, bg) {
         obj2 = line.to;
     }
     var bb1 = obj1.getBBox(),
-        bb2 = obj2.getBBox(),
-        p = [{x: bb1.x + bb1.width / 2, y: bb1.y - 1},
-        {x: bb1.x + bb1.width / 2, y: bb1.y + bb1.height + 1},
-        {x: bb1.x - 1, y: bb1.y + bb1.height / 2},
-        {x: bb1.x + bb1.width + 1, y: bb1.y + bb1.height / 2},
-        {x: bb2.x + bb2.width / 2, y: bb2.y - 1},
-        {x: bb2.x + bb2.width / 2, y: bb2.y + bb2.height + 1},
-        {x: bb2.x - 1, y: bb2.y + bb2.height / 2},
-        {x: bb2.x + bb2.width + 1, y: bb2.y + bb2.height / 2}],
-        d = {}, dis = [];
-    for (var i = 0; i < 4; i++) {
-        for (var j = 4; j < 8; j++) {
-            var dx = Math.abs(p[i].x - p[j].x),
-                dy = Math.abs(p[i].y - p[j].y);
-            if ((i == j - 4) || (((i != 3 && j != 6) || p[i].x < p[j].x) && ((i != 2 && j != 7) || p[i].x > p[j].x) && ((i != 0 && j != 5) || p[i].y > p[j].y) && ((i != 1 && j != 4) || p[i].y < p[j].y))) {
-                dis.push(dx + dy);
-                d[dis[dis.length - 1]] = [i, j];
-            }
-        }
-    }
-    if (dis.length == 0) {
-        var res = [0, 4];
-    } else {
-        res = d[Math.min.apply(Math, dis)];
-    }
-    var x1 = p[res[0]].x,
-        y1 = p[res[0]].y,
-        x4 = p[res[1]].x,
-        y4 = p[res[1]].y;
-    dx = Math.max(Math.abs(x1 - x4) / 2, 10);
-    dy = Math.max(Math.abs(y1 - y4) / 2, 10);
-    var x2 = [x1, x1, x1 - dx, x1 + dx][res[0]].toFixed(3),
-        y2 = [y1 - dy, y1 + dy, y1, y1][res[0]].toFixed(3),
-        x3 = [0, 0, 0, 0, x4, x4, x4 - dx, x4 + dx][res[1]].toFixed(3),
-        y3 = [0, 0, 0, 0, y1 + dy, y1 - dy, y4, y4][res[1]].toFixed(3);
-    var path = ["M", x1.toFixed(3), y1.toFixed(3), "C", x2, y2, x3, y3, x4.toFixed(3), y4.toFixed(3)].join(",");
+        bb2 = obj2.getBBox();
+    var x1 = bb1.x+bb1.width/2,
+        y1 = bb1.y+bb1.height,
+        x2 = bb2.x+bb2.width/2,
+        y2 = bb2.y;
+    var path = ["M", x1, y1, "L", x2, y2];
     if (line && line.line) {
         line.bg && line.bg.attr({path: path});
         line.line.attr({path: path});
@@ -95,7 +65,7 @@ window.onload = function () {
             snapToGrid(this.pair);
         },
 
-        grid = [];
+        grid = {a:null, b:null, c:null};
         function snapToGrid(obj)
         {
           var n = null;
@@ -122,36 +92,47 @@ window.onload = function () {
         r = Raphael("holder", 640, 480),
 
         connections = [],
-        shapes = [
-                    r.rect(10, 100, 20, 20), // 0
-                    r.rect(40, 100, 20, 20), // 1
-                    r.rect(70, 100, 20, 20), // 2
-                    r.rect(10, 150, 20, 20), // 3
-                    r.rect(40, 150, 20, 20), // 4
-                    r.rect(70, 150, 20, 20)  // 5
-                ],
-        texts = [   r.text(20, 110, "1"),
-                    r.text(50, 110, "2"),
-                    r.text(80, 110, "3"),
-                    r.text(20, 160, "1"),
-                    r.text(50, 160, "2"),
-                    r.text(80, 160, "3")
-                ];
+        source = ["das", "ist ein", "kleines", "haus"],
+        target = ["this", "is a", "small", "house"],
+        csz = 7;
+        padding = 15,
+        inner_pad = 5,
+        begin = 10,
+        texts = [],
+        shapes = [],
+        texts.push(r.text(padding, 110, source[0]).attr({'text-anchor': 'start'})),
+        texts.push(r.text(padding+texts[0].getBBox().x2, 110, source[1]).attr({'text-anchor': 'start'}))
+        texts.push(r.text(padding+texts[1].getBBox().x2, 110, source[2]).attr({'text-anchor': 'start'}))
+        texts.push(r.text(padding+texts[2].getBBox().x2, 110, source[3]).attr({'text-anchor': 'start'}))
+        shapes.push(r.rect(padding-inner_pad, 100, texts[0].getBBox().width+(2*inner_pad), 20))
+        shapes.push(r.rect(shapes[0].getBBox().x2+inner_pad, 100, texts[1].getBBox().width+(2*inner_pad), 20))
+        shapes.push(r.rect(shapes[1].getBBox().x2+inner_pad, 100, texts[2].getBBox().width+(2*inner_pad), 20))
+        shapes.push(r.rect(shapes[2].getBBox().x2+inner_pad, 100, texts[3].getBBox().width+(2*inner_pad), 20))
+
+        texts.push(r.text(padding,                       160, target[0]).attr({'text-anchor': 'start'})),
+        texts.push(r.text(padding+texts[4].getBBox().x2, 160, target[1]).attr({'text-anchor': 'start'}))
+        texts.push(r.text(padding+texts[5].getBBox().x2, 160, target[2]).attr({'text-anchor': 'start'}))
+        texts.push(r.text(padding+texts[6].getBBox().x2, 160, target[3]).attr({'text-anchor': 'start'}))
+        shapes.push(r.rect(padding-inner_pad,                150, texts[4].getBBox().width+(2*inner_pad), 20))
+        shapes.push(r.rect(shapes[4].getBBox().x2+inner_pad, 150, texts[5].getBBox().width+(2*inner_pad), 20))
+        shapes.push(r.rect(shapes[5].getBBox().x2+inner_pad, 150, texts[6].getBBox().width+(2*inner_pad), 20))
+        shapes.push(r.rect(shapes[6].getBBox().x2+inner_pad, 150, texts[7].getBBox().width+(2*inner_pad), 20))
+
     for (i = 0, ii = shapes.length; i < ii; i++) {
-        color = Raphael.getColor();
-        tempS = shapes[i].attr({fill: color, stroke: color, "fill-opacity": 0, "stroke-width": 2, cursor: "move"});
-        tempT = texts[i].attr({fill: color, stroke: "none", "font-size": 15, cursor: "move"});
-        shapes[i].drag(move, dragger, up);
-        texts[i].drag(move, dragger, up);
+        tempS = shapes[i].attr({fill: "#aaa", stroke: "#000", "fill-opacity": 0, "stroke-width": 1, cursor: "move"});
+        tempT =  texts[i].attr({fill: "#000", stroke: "none",  cursor: "move"});
+        if (i >= 4) {
+          shapes[i].drag(move, dragger, up);
+          texts[i].drag(move, dragger, up);
+        }
         
         // Associate the elements
         tempS.pair = tempT;
         tempT.pair = tempS;
     }
 
-    connections.push(r.connection(shapes[0], shapes[3], "#fff"));
-    connections.push(r.connection(shapes[1], shapes[4], "#fff"));
-    connections.push(r.connection(shapes[2], shapes[5], "#fff"));
-
-    r.rect(10, 150, 80, 20);
+    connections.push(r.connection(shapes[0], shapes[4], "#000"));
+    connections.push(r.connection(shapes[1], shapes[5], "#000"));
+    connections.push(r.connection(shapes[2], shapes[6], "#000"));
+    connections.push(r.connection(shapes[3], shapes[7], "#000"));
 };
