@@ -26,9 +26,11 @@ Raphael.fn.connection = function (obj1, obj2, line, bg) {
 };
 
 var el;
+window.curDrag = null;
 window.onload = function () {
     var color, i, ii, tempS, tempT,
         dragger = function () {
+            curDrag = this;
                 // Original coords for main element
             this.ox = this.type == "ellipse" ? this.attr("cx") : this.attr("x");
             this.oy = this.type == "ellipse" ? this.attr("cy") : this.attr("y");
@@ -89,7 +91,7 @@ window.onload = function () {
           }
         }
 
-        r = Raphael("holder", 640, 480),
+        r = Raphael("holder", 640, 200),
 
         connections = [],
         source = ["das", "ist ein", "kleines", "haus"],
@@ -118,11 +120,30 @@ window.onload = function () {
         shapes.push(r.rect(shapes[5].getBBox().x2+inner_pad, 150, texts[6].getBBox().width+(2*inner_pad), 20))
         shapes.push(r.rect(shapes[6].getBBox().x2+inner_pad, 150, texts[7].getBBox().width+(2*inner_pad), 20))
 
+      
+        function collide(a) {
+          document.getElementById("debug").innerHTML = curDrag.type + " | " + a.type + " " + a.getBBox().x; 
+          if (a.type == "rect") {
+            if (curDrag.getBBox().x < a.getBBox().x) {
+              att = {x: a.getBBox().x-a.getBBox().width-padding}
+              a.attr(att);
+              att = {x: a.pair.getBBox().x-a.getBBox().width-padding}
+              a.pair.attr(att);
+            } else {
+              att = {x: a.getBBox().x+a.getBBox().width+padding}
+              a.attr(att);
+              att = {x: a.pair.getBBox().x+a.getBBox().width+padding}
+              a.pair.attr(att);
+            }
+          }
+          //hitFill = a.attr("fill");
+        };
+
     for (i = 0, ii = shapes.length; i < ii; i++) {
         tempS = shapes[i].attr({fill: "#aaa", stroke: "#000", "fill-opacity": 0, "stroke-width": 1, cursor: "move"});
         tempT =  texts[i].attr({fill: "#000", stroke: "none",  cursor: "move"});
         if (i >= 4) {
-          shapes[i].drag(move, dragger, up);
+          shapes[i].drag(move, dragger, up).onDragOver( function(a) { collide(a);})
           texts[i].drag(move, dragger, up);
         }
         
