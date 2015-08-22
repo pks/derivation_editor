@@ -27,6 +27,7 @@ Raphael.fn.connection = function (obj1, obj2, line, bg) {
 
 var el;
 window.curDrag = null;
+window.grid = [];
 window.onload = function () {
     var color, i, ii, tempS, tempT,
         dragger = function () {
@@ -119,25 +120,35 @@ window.onload = function () {
         shapes.push(r.rect(shapes[4].getBBox().x2+inner_pad, 150, texts[5].getBBox().width+(2*inner_pad), 20))
         shapes.push(r.rect(shapes[5].getBBox().x2+inner_pad, 150, texts[6].getBBox().width+(2*inner_pad), 20))
         shapes.push(r.rect(shapes[6].getBBox().x2+inner_pad, 150, texts[7].getBBox().width+(2*inner_pad), 20))
+        window.grid.push(0);
+        window.grid.push(1);
+        window.grid.push(2);
+        window.grid.push(3);
+        window.gridToShape = { 0: shapes[4].id, 1: shapes[5].id, 2: shapes[6].id, 3: shapes[7].id }
+        window.shapeToGrid = {}
+        shapeToGrid[shapes[4].id] = 0;
+        shapeToGrid[shapes[5].id] = 1;
+        shapeToGrid[shapes[6].id] = 2;
+        shapeToGrid[shapes[7].id] = 3;
 
       
-        function collide(a) {
-          document.getElementById("debug").innerHTML = curDrag.type + " | " + a.type + " " + a.getBBox().x; 
-          if (a.type == "rect") {
-            if (curDrag.getBBox().x < a.getBBox().x) {
-              att = {x: a.getBBox().x-a.getBBox().width-padding}
-              a.attr(att);
-              att = {x: a.pair.getBBox().x-a.getBBox().width-padding}
-              a.pair.attr(att);
-            } else {
-              att = {x: a.getBBox().x+a.getBBox().width+padding}
-              a.attr(att);
-              att = {x: a.pair.getBBox().x+a.getBBox().width+padding}
-              a.pair.attr(att);
-            }
-          }
-          //hitFill = a.attr("fill");
-        };
+    function collide(a) {
+      document.getElementById("debug").innerHTML = curDrag.type + " | " + a.type + " " + a.getBBox().x; 
+      if (a.type == "rect") {
+        if (shapeToGrid[curDrag.id] < shapeToGrid[a.id]) {
+          att = {x: curDrag.getBBox().x-curDrag.getBBox().width+padding}
+          a.attr(att);
+          att = {x: curDrag.pair.getBBox().x-curDrag.getBBox().width+padding}
+          a.pair.attr(att);
+        } else {
+          att = {x: a.getBBox().x+a.getBBox().width+padding}
+          a.attr(att);
+          att = {x: a.pair.getBBox().x+a.getBBox().width+padding}
+          a.pair.attr(att);
+        }
+      }
+      hitFill = a.attr("fill");
+    };
 
     for (i = 0, ii = shapes.length; i < ii; i++) {
         tempS = shapes[i].attr({fill: "#aaa", stroke: "#000", "fill-opacity": 0, "stroke-width": 1, cursor: "move"});
