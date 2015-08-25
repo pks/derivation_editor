@@ -17,11 +17,19 @@ window.onload = function () {
     {
       document.getElementById("debug").innerHTML = el["id"] + " <-> " + obj["id"]
       ee = shapesById[obj["id"]];
-      if (el.getBBox().x > ee.getBBox().x) { 
-        att = {x: ee.attr("x")+70};
+      if (el["grid"] > ee["grid"]) {
+        if (el.getBBox().width < obj.getBBox().width &&
+            el.getBBox().x > (obj.getBBox().x+obj.getBBox().width/2)) {
+          return;
+        }
+        att = {x: ee.attr("x")+el.getBBox().width+10};
         ee.attr(att);
       } else {
-        att = {x: ee.attr("x")-70};
+        if (el.getBBox().width < obj.getBBox().width &&
+            el.getBBox().x < (obj.getBBox().x+obj.getBBox().width/2)) {
+          return;
+        }
+        att = {x: ee.attr("x")-(el.getBBox().width+10)};
         ee.attr(att);
       }
 
@@ -42,23 +50,31 @@ window.onload = function () {
         obj.animate(att, 250);
       }
       // x
-      if (el.getBBox().x != el["grid"]*70) {
+      /*if (el.getBBox().x != el["grid"]*70) {
         att = {x:el["grid"]*70};
         obj.animate(att,250);
-      }
+      }*/
       
+      var d = 0;
       for (var i = 0; i < 4; i++) {
-        obj = shapesById[i];
-        att = {x:obj["grid"]*70};
+        obj = null
+        for (var j = 0; j < shapes.length; j++) {
+          obj = shapesById[j];
+          if (obj["grid"] == i)
+            break;
+        }
+        att = {x:d};
         obj.animate(att,250);
+        d += obj.getBBox().width+10;
       }
     };
   r = Raphael("holder", 280, 100),
+  xAnchors = [ 0, 20, 60, 130 ]
   shapes = [
-             r.rect(0,   50, 60, 30, 0),
-             r.rect(70,  50, 60, 30, 0),
-             r.rect(140, 50, 60, 30, 0),
-             r.rect(210, 50, 60, 30, 0),
+             r.rect(xAnchors[0], 50, 10, 30, 0),
+             r.rect(xAnchors[1], 50, 30, 30, 0),
+             r.rect(xAnchors[2], 50, 60, 30, 0),
+             r.rect(xAnchors[3], 50, 30, 30, 0),
            ];
   colors = [ "#000", "#ccc", "#0f0", "#00f" ];
   shapesById  = {};
