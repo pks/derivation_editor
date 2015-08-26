@@ -1,170 +1,194 @@
 Raphael.fn.connection = function (obj1, obj2, line, bg) {
-    if (obj1.line && obj1.from && obj1.to) {
-        line = obj1;
-        obj1 = line.from;
-        obj2 = line.to;
-    }
-    var bb1 = obj1.getBBox(),
-        bb2 = obj2.getBBox();
-    var x1 = bb1.x+bb1.width/2,
-        y1 = bb1.y+bb1.height,
-        x2 = bb2.x+bb2.width/2,
-        y2 = bb2.y;
-    var path = ["M", x1, y1, "L", x2, y2];
-    if (line && line.line) {
-        line.bg && line.bg.attr({path: path});
-        line.line.attr({path: path});
-    } else {
-        var color = typeof line == "string" ? line : "#000";
-        return {
-            bg: bg && bg.split && this.path(path).attr({stroke: bg.split("|")[0], fill: "none", "stroke-width": bg.split("|")[1] || 3}),
-            line: this.path(path).attr({stroke: color, fill: "none"}),
-            from: obj1,
-            to: obj2
-        };
-    }
+  if (obj1.line && obj1.from && obj1.to) {
+    line = obj1;
+    obj1 = line.from;
+    obj2 = line.to;
+  }
+  var bb1 = obj1.getBBox(),
+      bb2 = obj2.getBBox();
+  var x1 = bb1.x+bb1.width/2,
+      y1 = bb1.y+bb1.height,
+      x2 = bb2.x+bb2.width/2,
+      y2 = bb2.y;
+  var path = ["M", x1, y1, "L", x2, y2];
+  if (line && line.line) {
+    line.bg && line.bg.attr({path: path});
+    line.line.attr({path: path});
+  } else {
+    var color = typeof line == "string" ? line : "#000";
+    return {
+      bg: bg && bg.split && this.path(path).attr({stroke: bg.split("|")[0], fill: "none", "stroke-width": bg.split("|")[1] || 3}),
+      line: this.path(path).attr({stroke: color, fill: "none"}),
+      from: obj1,
+      to: obj2
+    };
+  }
 };
 
-var el;
-window.curDrag = null;
-window.grid = [];
+add_obj = function()
+{
+  r.rect(350,105,100,40);
+}
+
+var shapes_by_id = {},
+    curDrag = null,
+    shapes = [],
+    texts = [],
+    r;
 window.onload = function () {
-    var color, i, ii, tempS, tempT,
-        dragger = function () {
-            curDrag = this;
-                // Original coords for main element
-            this.ox = this.type == "ellipse" ? this.attr("cx") : this.attr("x");
-            this.oy = this.type == "ellipse" ? this.attr("cy") : this.attr("y");
-            if (this.type != "text") this.animate({"fill-opacity": .2}, 500);
-                
-                // Original coords for pair element
-            this.pair.ox = this.pair.type == "ellipse" ? this.pair.attr("cx") : this.pair.attr("x");
-            this.pair.oy = this.pair.type == "ellipse" ? this.pair.attr("cy") : this.pair.attr("y");
-            if (this.pair.type != "text") this.pair.animate({"fill-opacity": .2}, 500);            
-        },
-        move = function (dx, dy) {
-                // Move main element
-            var att = {x: this.ox + dx, y: this.oy + dy};
-            this.attr(att);
-            
-                // Move paired element
-            att = {x: this.pair.ox + dx, y: this.pair.oy + dy};
-            this.pair.attr(att);            
-            
-                // Move connections
-            for (i = connections.length; i--;) {
-                r.connection(connections[i]);
-            }
-            r.safari();
-        },
-        up = function () {
-            // Fade original element on mouse up
-            if (this.type != "text") this.animate({"fill-opacity": 0}, 500);
-            
-            // Fade paired element on mouse up
-            if (this.pair.type != "text") this.pair.animate({"fill-opacity": 0}, 500);            
-
-            snapToGrid(this);
-            snapToGrid(this.pair);
-        },
-
-        grid = {a:null, b:null, c:null};
-        function snapToGrid(obj)
-        {
-          var n = null;
-
-          if (obj.type == "text") {
-            sy = 160;
-            ty = 150;
-          } else {
-            sy = 150;
-            ty = 160;
-          }
-
-          if (obj.getBBox().y != sy) {
-            att = {y: sy};
-            obj.attr(att);            
-            att = {y: ty};
-            obj.pair.attr(att);            
-            for (i = connections.length; i--;) {
-                r.connection(connections[i]);
-            }
-          }
+  r = Raphael("holder", 640, 200); // FIXME: variable sz
+  var dragger = function () {
+        curDrag = this;
+        if (this.type == "text")
+          curDrag = this.pair;
+        // remember original coords
+        this.ox = this.attr("x");
+        this.oy = this.attr("y");
+        this.pair.ox = this.pair.attr("x");
+        this.pair.oy = this.pair.attr("y");
+        if (this.type != "text")
+          this.animate({ "fill-opacity": .2 }, 500);
+        if (this.pair.type != "text")
+          this.pair.animate({ "fill-opacity": .2 }, 500);
+    },
+    move = function (dx, dy) {
+      var att = { x: this.ox + dx, y: this.oy };
+      this.attr(att);
+      att = { x: this.pair.ox + dx, y: this.pair.oy };
+      this.pair.attr(att);
+      for (i = connections.length; i--;) {
+        r.connection(connections[i]);
+      }
+      r.safari();
+    },
+    collide = function collide(obj) {
+      if (obj.type != 'rect')
+        return;
+      if (curDrag["grid_"] > obj["grid_"]) {
+        if (curDrag.getBBox().width < obj.getBBox().width &&
+            curDrag.getBBox().x > (obj.getBBox().x+obj.getBBox().width/3)) {
+          return;
         }
+        att = { x: obj.attr("x")+curDrag.getBBox().width+(margin-2*padding) };
+        obj.attr(att);
+        att = { x: obj.pair.attr("x")+curDrag.getBBox().width+(margin-2*padding) };
+        obj.pair.attr(att);
+      } else {
+        if (curDrag.getBBox().width < obj.getBBox().width &&
+            curDrag.getBBox().x < (obj.getBBox().x+obj.getBBox().width/3)) {
+          return;
+        }
+        att = { x: obj.attr("x")-(curDrag.getBBox().width+(margin-2*padding)) };
+        obj.attr(att);
+        att = { x: obj.pair.attr("x")-(curDrag.getBBox().width+(margin-2*padding)) };
+        obj.pair.attr(att);
+      }
+      // switch grid pos
+      var tmpx = curDrag["grid_"];
+      curDrag["grid_"] = obj["grid_"];
+      obj["grid_"] = tmpx;
+    },
+    up = function () {
+      if (this.type != "text")
+        this.animate({"fill-opacity": 0}, 500);
+      if (this.pair.type != "text")
+        this.pair.animate({"fill-opacity": 0}, 500);
 
-        r = Raphael("holder", 640, 200),
-
-        connections = [],
-        source = ["das", "ist ein", "kleines", "haus"],
-        target = ["this", "is a", "small", "house"],
-        csz = 7;
-        padding = 15,
-        inner_pad = 5,
-        begin = 10,
-        texts = [],
-        shapes = [],
-        texts.push(r.text(padding, 110, source[0]).attr({'text-anchor': 'start'})),
-        texts.push(r.text(padding+texts[0].getBBox().x2, 110, source[1]).attr({'text-anchor': 'start'}))
-        texts.push(r.text(padding+texts[1].getBBox().x2, 110, source[2]).attr({'text-anchor': 'start'}))
-        texts.push(r.text(padding+texts[2].getBBox().x2, 110, source[3]).attr({'text-anchor': 'start'}))
-        shapes.push(r.rect(padding-inner_pad, 100, texts[0].getBBox().width+(2*inner_pad), 20))
-        shapes.push(r.rect(shapes[0].getBBox().x2+inner_pad, 100, texts[1].getBBox().width+(2*inner_pad), 20))
-        shapes.push(r.rect(shapes[1].getBBox().x2+inner_pad, 100, texts[2].getBBox().width+(2*inner_pad), 20))
-        shapes.push(r.rect(shapes[2].getBBox().x2+inner_pad, 100, texts[3].getBBox().width+(2*inner_pad), 20))
-
-        texts.push(r.text(padding,                       160, target[0]).attr({'text-anchor': 'start'})),
-        texts.push(r.text(padding+texts[4].getBBox().x2, 160, target[1]).attr({'text-anchor': 'start'}))
-        texts.push(r.text(padding+texts[5].getBBox().x2, 160, target[2]).attr({'text-anchor': 'start'}))
-        texts.push(r.text(padding+texts[6].getBBox().x2, 160, target[3]).attr({'text-anchor': 'start'}))
-        shapes.push(r.rect(padding-inner_pad,                150, texts[4].getBBox().width+(2*inner_pad), 20))
-        shapes.push(r.rect(shapes[4].getBBox().x2+inner_pad, 150, texts[5].getBBox().width+(2*inner_pad), 20))
-        shapes.push(r.rect(shapes[5].getBBox().x2+inner_pad, 150, texts[6].getBBox().width+(2*inner_pad), 20))
-        shapes.push(r.rect(shapes[6].getBBox().x2+inner_pad, 150, texts[7].getBBox().width+(2*inner_pad), 20))
-        window.grid.push(0);
-        window.grid.push(1);
-        window.grid.push(2);
-        window.grid.push(3);
-        window.gridToShape = { 0: shapes[4].id, 1: shapes[5].id, 2: shapes[6].id, 3: shapes[7].id }
-        window.shapeToGrid = {}
-        shapeToGrid[shapes[4].id] = 0;
-        shapeToGrid[shapes[5].id] = 1;
-        shapeToGrid[shapes[6].id] = 2;
-        shapeToGrid[shapes[7].id] = 3;
-
-      
-    function collide(a) {
-      document.getElementById("debug").innerHTML = curDrag.type + " | " + a.type + " " + a.getBBox().x; 
-      if (a.type == "rect") {
-        if (shapeToGrid[curDrag.id] < shapeToGrid[a.id]) {
-          att = {x: curDrag.getBBox().x-curDrag.getBBox().width+padding}
-          a.attr(att);
-          att = {x: curDrag.pair.getBBox().x-curDrag.getBBox().width+padding}
-          a.pair.attr(att);
+      snapToGrid(this);
+    },
+    snapToGrid = function (obj)
+    {
+      // just x coord, y is fixed in drag
+      var d = xbegin;
+      var d2 = 0;
+      for (var i = 0; i < target.length; i++) {
+        obj = null
+        for (var j = 0; j < target.length; j++) {
+          obj = shapes_by_id[j];
+          if (obj["grid_"] == i)
+            break;
+        }
+        att = { x:d };
+        obj.attr(att);
+        att = { x: obj.getBBox().x+padding };
+        obj.pair.attr(att);
+        d += obj.getBBox().width+(margin-2*padding);
+      }
+      for (i = connections.length; i--;) {
+        r.connection(connections[i]);
+      }
+    },
+    connections = [],
+    margin = 30,
+    padding = margin/3,
+    xbegin = 5,
+    ybegin = xbegin,
+    box_height = 40,
+    line_margin = 100,
+    source = ["das", "ist ein", "kleines", "haus", "gewesen", "."], // data
+    target = ["this", "has been", "a", "small", "house", "."],      // ^
+    align  = [0, 1, 3, 4, 1, 5],                                    // ^
+    make_objs = function (a, y, yd, type_=null)
+    {
+      for (var i=0; i < a.length; i++) {
+        var x_text = 0,
+            x_shape = 0;
+        if (i == 0) {
+          x_text = xbegin+padding;
+          x_shape = xbegin;
         } else {
-          att = {x: a.getBBox().x+a.getBBox().width+padding}
-          a.attr(att);
-          att = {x: a.pair.getBBox().x+a.getBBox().width+padding}
-          a.pair.attr(att);
+          x_text = margin+texts[texts.length-1].getBBox().x2;
+          x_shape = shapes[shapes.length-1].getBBox().x2+padding;
+        }
+        texts.push(r.text(x_text, y+yd, a[i]).attr({'text-anchor': 'start', 'font-size': 14, 'font-family': 'Times New Roman'}));
+        shapes.push(r.rect(x_shape, y, texts[texts.length-1].getBBox().width+(2*padding), box_height));
+        texts[texts.length-1].toBack();
+        shapes[shapes.length-1].toFront();
+        if (type_) {
+          texts[texts.length-1]["type_"] = type_;
+          shapes[shapes.length-1]["type_"] = type_;
         }
       }
-      hitFill = a.attr("fill");
     };
+  // source
+  make_objs(source, ybegin, box_height/2);
+  make_objs(target, line_margin+ybegin, box_height/2, "target");
+  // text editing
+  /*text = texts[4];
+  r.inlineTextEditing(text);
+  shape = shapes[4];
+  shape.dblclick(function(){
+    text.toFront();
+    // Retrieve created <input type=text> field
+    var input = text.inlineTextEditing.startEditing();
 
-    for (i = 0, ii = shapes.length; i < ii; i++) {
-        tempS = shapes[i].attr({fill: "#aaa", stroke: "#000", "fill-opacity": 0, "stroke-width": 1, cursor: "move"});
-        tempT =  texts[i].attr({fill: "#000", stroke: "none",  cursor: "move"});
-        if (i >= 4) {
-          shapes[i].drag(move, dragger, up).onDragOver( function(a) { collide(a);})
-          texts[i].drag(move, dragger, up);
-        }
-        
-        // Associate the elements
-        tempS.pair = tempT;
-        tempT.pair = tempS;
+    input.addEventListener("blur", function(e){
+        // Stop inline editing after blur on the text field
+        text.inlineTextEditing.stopEditing();
+        this.toFront();
+    }, true);
+  });*/
+  // make draggable
+  var k = 0;
+  for (var i=0; i < shapes.length; i++) {
+    shapes[i].attr({ fill: "#eee", stroke: "#000", "fill-opacity": 0, "stroke-width": 1 });
+    texts[i].attr({fill: "#000", stroke: "none"});
+    if (shapes[i]["type_"] == "target") {
+      shapes[i].drag(move, dragger, up).onDragOver( function(obj) { collide(obj); })
+      shapes[i].attr({ cursor: "move" });
+      texts[i].drag(move, dragger, up);
+      shapes[i]["id_"] = k;
+      shapes[i]["grid_"] = k;
+      shapes_by_id[k] = shapes[i];
+      k++;
     }
-
-    connections.push(r.connection(shapes[0], shapes[4], "#000"));
-    connections.push(r.connection(shapes[1], shapes[5], "#000"));
-    connections.push(r.connection(shapes[2], shapes[6], "#000"));
-    connections.push(r.connection(shapes[3], shapes[7], "#000"));
+    shapes[i].pair = texts[i];
+    texts[i].pair = shapes[i];
+  }
+  // connections
+  var offset = source.length-1;
+  for (var i=0; i < align.length; i++) {
+    connections.push(r.connection(shapes[i], shapes[offset+align[i]+1], "#000"));
+  }
 };
+

@@ -1,14 +1,24 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html lang="en">
+<!DOCTYPE html>
+<!-- 2015-08-26 -->
+<html lang='en'>
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
   <title>derivation editor</title>
-  <script src="raphael.js" type="text/javascript" charset="utf-8"></script>
-  <script src="r.js" type="text/javascript" charset="utf-8"></script>
+  <script src='raphael.js' type='text/javascript' charset='utf-8'></script>
+  <script src='r.js' type='text/javascript' charset='utf-8'></script>
+  <script src='Raphael.InlineTextEditing/raphael.inline_text_editing.js' charset='utf-8'></script>
 </head>
 <body>
-  <div id="holder"></div>
-  <p id="debug"></p>
+  <div id='holder'></div>
+  <input type='button' value='+' onClick='add_obj()' />
+  <p id='debug'></p>
+  <h3>TODO</h3>
+  <ul>
+    <li>edit text and resize, move (dblclick)</li>
+    <li>remove objs (move to special field)</li>
+    <li>add objs ('+' button, far right)</li>
+    <li>add alignments (click source, then target)</li>
+  </ul>
 </body>
 </html>
 
