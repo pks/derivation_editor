@@ -1,0 +1,3 @@
+[submodule "Raphael.InlineTextEditing"]
+	path = Raphael.InlineTextEditing
+	url = ./Raphael.InlineTextEditing/
