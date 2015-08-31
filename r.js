@@ -5,6 +5,8 @@
 var shapes_by_id = {},
     r,
     curDrag = null,
+    curEd = null,
+    curEdShape = null,
     shapes = [],
     target_shapes = [],
     texts = [],
@@ -18,14 +20,16 @@ var shapes_by_id = {},
     ysource = ybegin,
     ytarget = ysource+line_margin;
     font_size = 20,
+    font_width = -1,
     id = 0,
     connect_mode = false,
     connect_mode_shape = null,
+    edit_mode = false,
     rm_shape = null,
     text_att = { 'fill': '#000', 'stroke': 'none', 'text-anchor': 'start', 'font-size': font_size, 'font-family': 'Times New Roman' },
     shape_att = { fill: "#eee", stroke: "#000", "fill-opacity": 0, "stroke-width": 1 }
-    source = ["das", "ist ein", "kleines", "haus", "gewesen", "."], // data
-    target = ["this", "has been", "a", "small", "house", "."],      // ^
+    source = ["Das", "ist ein", "kleines", "Haus", "gewesen", "."], // data
+    target = ["This", "has been", "a", "small", "house", "."],      // ^
     align  = [0, 1, 3, 4, 1, 5];                                    // ^
 
 /*
@@ -234,25 +238,6 @@ snap_to_grid = function (anim=false)
 };
 
 /*
- * inline text editing
- *
- */
-/*text = texts[4];
-r.inlineTextEditing(text);
-shape = shapes[4];
-shape.dblclick(function(){
-  text.toFront();
-  // Retrieve created <input type=text> field
-  var input = text.inlineTextEditing.startEditing();
-
-  input.addEventListener("blur", function(e){
-      // Stop inline editing after blur on the text field
-      text.inlineTextEditing.stopEditing();
-      this.toFront();
-  }, true);
-});*/
-
-/*
  * objs
  *
  */
@@ -269,7 +254,7 @@ var make_obj = function(x, text, type)
   // make shape obj
   var x_shape = texts[texts.length-1].getBBox().x-padding,
       x_width = texts[texts.length-1].getBBox().width+(2*padding);
-  shapes.push(r.rect(x_shape, y, x_width, box_height).attr(shape_att));
+  shapes.push(r.rect(x_shape, y, x_width, box_height, 5).attr(shape_att));
   tx = texts[texts.length-1];
   sh = shapes[shapes.length-1];
   // fix z-index
@@ -300,6 +285,40 @@ var make_obj = function(x, text, type)
       }
     });
     target_shapes.push(sh);
+    // inline text editing
+    r.inlineTextEditing(tx);
+    sh.dblclick(function(){
+      if (edit_mode) return;
+      edit_mode = true;
+      this.pair.toFront();
+      curEd = this.pair;
+      curEdShape = this;
+      var input = curEd.inlineTextEditing.startEditing();
+      input.addEventListener("keypress", function(e) {
+        if (e.keyCode == 13) { // return
+          e.preventDefault();
+          return;
+        } else if (e.keyCode==27||e.keyCode==37||e.keyCode==38||e.keyCode==39||e.keyCode==40) { // esc, arrows, backspace
+          return;
+        } else if (e.keyCode == 8) { // backspace
+          curEdShape.animate({width:curEdShape.getBBox().width-14},125);
+          setTimeout(function(){snap_to_grid(true);},125);
+        } else {
+          curEdShape.animate({width:curEdShape.getBBox().width+font_width},125);
+          setTimeout(function(){
+            snap_to_grid(true);
+            r.setSize(r.width+font_width, r.height);
+          },125);
+        }
+      });
+      input.addEventListener("blur", function(e) {
+          curEd.inlineTextEditing.stopEditing();
+          curEdShape.toFront();
+          curEdShape.animate({width:curEd.getBBox().width+(margin-padding)},125);
+          setTimeout(function(){snap_to_grid(true);},125);
+          edit_mode = false;
+      }, true);
+    });
   } else if (type == "source") {
     sh.click(function() {
       if (connect_mode) {
@@ -367,12 +386,13 @@ window.onload = function ()
   for (var i=0; i<target.length; i++) {
     d += target[i].length;
   }
-  var font_width = r.text(-100,-100,'m').getBBox().width,
-      paper_width  = xbegin+(Math.max(source.length,target.length)*(margin+padding))
+  font_width = r.text(-100,-100,'m').getBBox().width;
+  var paper_width  = xbegin+(Math.max(source.length,target.length)*(margin+padding))
                       +(Math.max(c,d)*font_width),
       paper_height = ybegin+2*box_height+line_margin;
   r.setSize(paper_width, paper_height);
-  rm_shape = r.rect(5, line_margin+ybegin, 50, box_height).attr({"fill":"red"});
+  rm_shape = r.rect(5, line_margin+ybegin, 50, box_height).attr({"fill":"red","stroke":0});
+  rm_shape.toBack();
   rm_shape["rm_shape"] = true;
   // source objs
   make_objs(source, "source");
