@@ -1,194 +1,384 @@
-Raphael.fn.connection = function (obj1, obj2, line, bg) {
+/*
+ * global vars and data
+ *
+ */
+var shapes_by_id = {},
+    r,
+    curDrag = null,
+    shapes = [],
+    target_shapes = [],
+    texts = [],
+    connections = {},
+    margin = 30,
+    padding = margin/3,
+    xbegin = 80,
+    ybegin = 5,
+    box_height = 50,
+    line_margin = 150,
+    ysource = ybegin,
+    ytarget = ysource+line_margin;
+    font_size = 20,
+    id = 0,
+    connect_mode = false,
+    connect_mode_shape = null,
+    rm_shape = null,
+    text_att = { 'fill': '#000', 'stroke': 'none', 'text-anchor': 'start', 'font-size': font_size, 'font-family': 'Times New Roman' },
+    shape_att = { fill: "#eee", stroke: "#000", "fill-opacity": 0, "stroke-width": 1 }
+    source = ["das", "ist ein", "kleines", "haus", "gewesen", "."], // data
+    target = ["this", "has been", "a", "small", "house", "."],      // ^
+    align  = [0, 1, 3, 4, 1, 5];                                    // ^
+
+/*
+ * connection
+ *
+ */
+Raphael.fn.connection = function (obj1, obj2, line, bg)
+{
   if (obj1.line && obj1.from && obj1.to) {
     line = obj1;
     obj1 = line.from;
     obj2 = line.to;
   }
+  if (!obj1.getBBox() || !obj2.getBBox())
+    return;
   var bb1 = obj1.getBBox(),
-      bb2 = obj2.getBBox();
-  var x1 = bb1.x+bb1.width/2,
+      bb2 = obj2.getBBox(),
+      x1 = bb1.x+bb1.width/2,
       y1 = bb1.y+bb1.height,
       x2 = bb2.x+bb2.width/2,
-      y2 = bb2.y;
-  var path = ["M", x1, y1, "L", x2, y2];
+      y2 = bb2.y,
+      path = ["M", x1, y1, "L", x2, y2];
   if (line && line.line) {
     line.bg && line.bg.attr({path: path});
     line.line.attr({path: path});
   } else {
-    var color = typeof line == "string" ? line : "#000";
     return {
       bg: bg && bg.split && this.path(path).attr({stroke: bg.split("|")[0], fill: "none", "stroke-width": bg.split("|")[1] || 3}),
-      line: this.path(path).attr({stroke: color, fill: "none"}),
+      line: this.path(path).attr({stroke: "#000", fill: "none"}),
       from: obj1,
       to: obj2
     };
   }
 };
-
-add_obj = function()
+var conn_str = function (obj1, obj2)
 {
-  r.rect(350,105,100,40);
+  return obj1["id_"]+"-"+obj2["id_"];
 }
-
-var shapes_by_id = {},
-    curDrag = null,
-    shapes = [],
-    texts = [],
-    r;
-window.onload = function () {
-  r = Raphael("holder", 640, 200); // FIXME: variable sz
-  var dragger = function () {
-        curDrag = this;
-        if (this.type == "text")
-          curDrag = this.pair;
-        // remember original coords
-        this.ox = this.attr("x");
-        this.oy = this.attr("y");
-        this.pair.ox = this.pair.attr("x");
-        this.pair.oy = this.pair.attr("y");
-        if (this.type != "text")
-          this.animate({ "fill-opacity": .2 }, 500);
-        if (this.pair.type != "text")
-          this.pair.animate({ "fill-opacity": .2 }, 500);
-    },
-    move = function (dx, dy) {
-      var att = { x: this.ox + dx, y: this.oy };
-      this.attr(att);
-      att = { x: this.pair.ox + dx, y: this.pair.oy };
-      this.pair.attr(att);
-      for (i = connections.length; i--;) {
-        r.connection(connections[i]);
+var make_conn = function(obj1, obj2)
+{
+  connections[conn_str(obj1,obj2)] = r.connection(obj1, obj2);
+},
+rm_conn = function(id1, id2)
+{
+  var b = false;
+  for (var i=0; i<source.length; i++) {
+    for (var j=0; j<target_shapes.length; j++) {
+      if (i==id1 && target_shapes[j]["id_"]==id2) {
+        var key = id1+"-"+id2;
+        var q = connections[key];
+        q.line.remove();
+        delete connections[key];
+        b = true;
+        break;
       }
-      r.safari();
-    },
-    collide = function collide(obj) {
-      if (obj.type != 'rect')
-        return;
-      if (curDrag["grid_"] > obj["grid_"]) {
-        if (curDrag.getBBox().width < obj.getBBox().width &&
-            curDrag.getBBox().x > (obj.getBBox().x+obj.getBBox().width/3)) {
-          return;
-        }
-        att = { x: obj.attr("x")+curDrag.getBBox().width+(margin-2*padding) };
-        obj.attr(att);
-        att = { x: obj.pair.attr("x")+curDrag.getBBox().width+(margin-2*padding) };
-        obj.pair.attr(att);
-      } else {
-        if (curDrag.getBBox().width < obj.getBBox().width &&
-            curDrag.getBBox().x < (obj.getBBox().x+obj.getBBox().width/3)) {
-          return;
-        }
-        att = { x: obj.attr("x")-(curDrag.getBBox().width+(margin-2*padding)) };
-        obj.attr(att);
-        att = { x: obj.pair.attr("x")-(curDrag.getBBox().width+(margin-2*padding)) };
-        obj.pair.attr(att);
-      }
-      // switch grid pos
-      var tmpx = curDrag["grid_"];
-      curDrag["grid_"] = obj["grid_"];
-      obj["grid_"] = tmpx;
-    },
-    up = function () {
-      if (this.type != "text")
-        this.animate({"fill-opacity": 0}, 500);
-      if (this.pair.type != "text")
-        this.pair.animate({"fill-opacity": 0}, 500);
-
-      snapToGrid(this);
-    },
-    snapToGrid = function (obj)
-    {
-      // just x coord, y is fixed in drag
-      var d = xbegin;
-      var d2 = 0;
-      for (var i = 0; i < target.length; i++) {
-        obj = null
-        for (var j = 0; j < target.length; j++) {
-          obj = shapes_by_id[j];
-          if (obj["grid_"] == i)
-            break;
-        }
-        att = { x:d };
-        obj.attr(att);
-        att = { x: obj.getBBox().x+padding };
-        obj.pair.attr(att);
-        d += obj.getBBox().width+(margin-2*padding);
-      }
-      for (i = connections.length; i--;) {
-        r.connection(connections[i]);
-      }
-    },
-    connections = [],
-    margin = 30,
-    padding = margin/3,
-    xbegin = 5,
-    ybegin = xbegin,
-    box_height = 40,
-    line_margin = 100,
-    source = ["das", "ist ein", "kleines", "haus", "gewesen", "."], // data
-    target = ["this", "has been", "a", "small", "house", "."],      // ^
-    align  = [0, 1, 3, 4, 1, 5],                                    // ^
-    make_objs = function (a, y, yd, type_=null)
-    {
-      for (var i=0; i < a.length; i++) {
-        var x_text = 0,
-            x_shape = 0;
-        if (i == 0) {
-          x_text = xbegin+padding;
-          x_shape = xbegin;
-        } else {
-          x_text = margin+texts[texts.length-1].getBBox().x2;
-          x_shape = shapes[shapes.length-1].getBBox().x2+padding;
-        }
-        texts.push(r.text(x_text, y+yd, a[i]).attr({'text-anchor': 'start', 'font-size': 14, 'font-family': 'Times New Roman'}));
-        shapes.push(r.rect(x_shape, y, texts[texts.length-1].getBBox().width+(2*padding), box_height));
-        texts[texts.length-1].toBack();
-        shapes[shapes.length-1].toFront();
-        if (type_) {
-          texts[texts.length-1]["type_"] = type_;
-          shapes[shapes.length-1]["type_"] = type_;
-        }
-      }
-    };
-  // source
-  make_objs(source, ybegin, box_height/2);
-  make_objs(target, line_margin+ybegin, box_height/2, "target");
-  // text editing
-  /*text = texts[4];
-  r.inlineTextEditing(text);
-  shape = shapes[4];
-  shape.dblclick(function(){
-    text.toFront();
-    // Retrieve created <input type=text> field
-    var input = text.inlineTextEditing.startEditing();
-
-    input.addEventListener("blur", function(e){
-        // Stop inline editing after blur on the text field
-        text.inlineTextEditing.stopEditing();
-        this.toFront();
-    }, true);
-  });*/
-  // make draggable
-  var k = 0;
-  for (var i=0; i < shapes.length; i++) {
-    shapes[i].attr({ fill: "#eee", stroke: "#000", "fill-opacity": 0, "stroke-width": 1 });
-    texts[i].attr({fill: "#000", stroke: "none"});
-    if (shapes[i]["type_"] == "target") {
-      shapes[i].drag(move, dragger, up).onDragOver( function(obj) { collide(obj); })
-      shapes[i].attr({ cursor: "move" });
-      texts[i].drag(move, dragger, up);
-      shapes[i]["id_"] = k;
-      shapes[i]["grid_"] = k;
-      shapes_by_id[k] = shapes[i];
-      k++;
     }
-    shapes[i].pair = texts[i];
-    texts[i].pair = shapes[i];
+    if (b)
+      break;
   }
-  // connections
+}
+make_conns_from_a = function (align)
+{
   var offset = source.length-1;
   for (var i=0; i < align.length; i++) {
-    connections.push(r.connection(shapes[i], shapes[offset+align[i]+1], "#000"));
+    make_conn(shapes[i], shapes[offset+align[i]+1]);
   }
+}
+
+/*
+ * drag'n drop
+ *
+ */
+var dragger = function ()
+{
+  curDrag = this;
+  if (this.type == "text")
+    curDrag = this.pair;
+  curDrag.toFront();
+  // remember original coords
+  this.ox = this.attr("x");
+  this.oy = this.attr("y");
+  this.pair.ox = this.pair.attr("x");
+  this.pair.oy = this.pair.attr("y");
+  if (this.type != "text")
+    this.animate({ "fill-opacity": .2 }, 500);
+  if (this.pair.type != "text")
+    this.pair.animate({ "fill-opacity": .2 }, 500);
+},
+move = function (dx, dy)
+{
+  var att = { x: this.ox + dx, y: this.oy };
+  this.attr(att);
+  att = { x: this.pair.ox + dx, y: this.pair.oy };
+  this.pair.attr(att);
+  for (key in connections) {
+    r.connection(connections[key]);
+  }
+  r.safari();
+};
+
+/*
+ * snap-to-grid
+ *
+ */
+var collide = function collide(obj)
+{
+  if (obj.type != 'rect') {
+    return;
+  }
+  if (obj["rm_shape"]) {
+    curDrag["delete_me_"] = true;
+    return;
+  }
+  if (curDrag["grid_"] > obj["grid_"]) {
+    if (curDrag.getBBox().width < obj.getBBox().width &&
+        curDrag.getBBox().x > (obj.getBBox().x+obj.getBBox().width/3)) {
+      return;
+    }
+    att = { x: obj.attr("x")+curDrag.getBBox().width+(margin-2*padding) };
+    obj.attr(att);
+    att = { x: obj.pair.attr("x")+curDrag.getBBox().width+(margin-2*padding) };
+    obj.pair.attr(att);
+  } else {
+    if (curDrag.getBBox().width < obj.getBBox().width &&
+        curDrag.getBBox().x < (obj.getBBox().x+obj.getBBox().width/3)) {
+      return;
+    }
+    att = { x: obj.attr("x")-(curDrag.getBBox().width+(margin-2*padding)) };
+    obj.attr(att);
+    att = { x: obj.pair.attr("x")-(curDrag.getBBox().width+(margin-2*padding)) };
+    obj.pair.attr(att);
+  }
+  // switch grid pos
+  var tmpx = curDrag["grid_"];
+  curDrag["grid_"] = obj["grid_"];
+  obj["grid_"] = tmpx;
+},
+up = function () {
+  if (this["delete_me_"]) {
+    var del = shapes_by_id[this["id_"]];
+    for (key in connections) {
+      if (key.split("-")[1] == curDrag["id_"]) {
+        rm_conn(key.split("-")[0], key.split("-")[1]);
+      }
+    }
+    var i=source.length;
+    for (; i<shapes.length; i++) {
+      if (shapes[i] == this) {
+        break;
+      }
+    }
+    shapes.splice(i, 1);
+    for (var i=0; i<target_shapes.length; i++) {
+      if (target_shapes[i] == this) {
+        break;
+      }
+    }
+    target_shapes.splice(i, 1);
+    delete shapes_by_id[this["id_"]];
+    del.pair.remove();
+    del.remove();
+    snap_to_grid(true);
+
+    return;
+  }
+  if (this.type != "text")
+    this.animate({"fill-opacity": 0}, 500);
+  if (this.pair.type != "text")
+    this.pair.animate({"fill-opacity": 0}, 500);
+
+  snap_to_grid(true);
+},
+snap_to_grid = function (anim=false)
+{
+  // just x coord, y is fixed in drag
+  var d = xbegin;
+  var d2 = 0;
+  // just target objs
+  target_shapes.sort(function(a, b) {
+    return a["grid_"]-b["grid_"];
+  });
+  for (var i = 0; i < target_shapes.length; i++) {
+    var obj = target_shapes[i];
+    if (!obj || !obj.attrs) { // removed
+      return;
+    }
+    att = { x:d };
+    if (anim) {
+      //obj.animate(att,250);
+      obj.attr(att);
+    } else {
+      obj.attr(att);
+    }
+    att = { x: obj.getBBox().x+padding };
+    if (anim) {
+      obj.pair.animate(att,125);
+      //obj.pair.attr(att);
+    } else {
+      obj.pair.attr(att);
+    }
+    d += obj.getBBox().width+(margin-2*padding);
+  }
+  for (key in connections) {
+    r.connection(connections[key]);
+  }
+};
+
+/*
+ * inline text editing
+ *
+ */
+/*text = texts[4];
+r.inlineTextEditing(text);
+shape = shapes[4];
+shape.dblclick(function(){
+  text.toFront();
+  // Retrieve created <input type=text> field
+  var input = text.inlineTextEditing.startEditing();
+
+  input.addEventListener("blur", function(e){
+      // Stop inline editing after blur on the text field
+      text.inlineTextEditing.stopEditing();
+      this.toFront();
+  }, true);
+});*/
+
+/*
+ * objs
+ *
+ */
+var make_obj = function(x, text, type)
+{
+  var y;
+  if (type == "source") {
+    y = ysource;
+  } else if (type == "target") {
+    y = ytarget;
+  }
+  // make text obj
+  texts.push(r.text(x, y+(box_height/2), text).attr(text_att));
+  // make shape obj
+  var x_shape = texts[texts.length-1].getBBox().x-padding,
+      x_width = texts[texts.length-1].getBBox().width+(2*padding);
+  shapes.push(r.rect(x_shape, y, x_width, box_height).attr(shape_att));
+  tx = texts[texts.length-1];
+  sh = shapes[shapes.length-1];
+  // fix z-index
+  tx.toBack();
+  sh.toFront();
+  // pair text/shape
+  tx.pair = shapes[shapes.length-1];
+  sh.pair = texts[texts.length-1];
+  // meta
+  sh["type_"] = type;
+  sh["id_"] = id;
+  shapes_by_id[id] = sh;
+  if (type == "target") {
+    sh.drag(move, dragger, up).onDragOver( function(obj) { collide(obj); })
+    sh.attr({ cursor: "move" });
+    tx.drag(move, dragger, up);
+    sh["grid_"] = id;
+    sh.click(function() {
+      if (connect_mode) {
+        if (connections[conn_str(connect_mode_shape,this)]) {
+          rm_conn(connect_mode_shape["id_"], this["id_"]);
+        } else {
+          make_conn(connect_mode_shape, this);
+        }
+        connect_mode_shape.attr({"fill-opacity": 0});
+        connect_mode = false;
+        connect_mode_shape = null;
+      }
+    });
+    target_shapes.push(sh);
+  } else if (type == "source") {
+    sh.click(function() {
+      if (connect_mode) {
+        if (this != connect_mode_shape)
+          return;
+        this.attr({"fill-opacity": 0});
+        connect_mode = false;
+        connect_mode_shape = null;
+      } else {
+        this.attr({"fill-opacity": .5});
+        connect_mode = true;
+        connect_mode_shape = this;
+      }
+    });
+  }
+  id++;
+},
+add_obj = function()
+{
+  var max=0, max_idx=-1;
+  for (var i=0; i < shapes.length; i++) {
+    if (shapes[i]["grid_"] > max) {
+      max_idx = i;
+      max = shapes[i]["grid_"];
+    }
+  }
+  if (!shapes[max_idx]) {
+    make_obj(xbegin+padding, "NEW", "target", 0);
+  } else {
+    make_obj(shapes[max_idx].getBBox().x2+(margin-padding),
+             "NEW",
+             "target",
+             max+1);
+  }
+  r.setSize(r.width+target_shapes[target_shapes.length-1].getBBox().width+margin, r.height);
+
+  snap_to_grid(true);
+},
+make_objs = function (a, type)
+{
+  for (var i=0; i < a.length; i++) {
+    var x = 0;
+    if (i == 0) {
+      x = xbegin+padding;
+    } else {
+      x = margin+texts[texts.length-1].getBBox().x2;
+    }
+    make_obj(x, a[i], type);
+  }
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+window.onload = function ()
+{
+  // canvas
+  r = Raphael("holder",0,0);
+  var c = 0,
+      d = 0,
+      a = null;
+  for (var i=0; i<source.length; i++) {
+    c += source[i].length;
+  }
+  for (var i=0; i<target.length; i++) {
+    d += target[i].length;
+  }
+  var font_width = r.text(-100,-100,'m').getBBox().width,
+      paper_width  = xbegin+(Math.max(source.length,target.length)*(margin+padding))
+                      +(Math.max(c,d)*font_width),
+      paper_height = ybegin+2*box_height+line_margin;
+  r.setSize(paper_width, paper_height);
+  rm_shape = r.rect(5, line_margin+ybegin, 50, box_height).attr({"fill":"red"});
+  rm_shape["rm_shape"] = true;
+  // source objs
+  make_objs(source, "source");
+  // target objs
+  make_objs(target, "target");
+  // initial connections from alignment
+  make_conns_from_a(align);
 };
 
