@@ -218,7 +218,6 @@ snap_to_grid = function (anim=false)
     }
     att = { x:d };
     if (anim) {
-      //obj.animate(att,250);
       obj.attr(att);
     } else {
       obj.attr(att);
@@ -226,7 +225,6 @@ snap_to_grid = function (anim=false)
     att = { x: obj.getBBox().x+padding };
     if (anim) {
       obj.pair.animate(att,125);
-      //obj.pair.attr(att);
     } else {
       obj.pair.attr(att);
     }
@@ -324,11 +322,11 @@ var make_obj = function(x, text, type)
       if (connect_mode) {
         if (this != connect_mode_shape)
           return;
-        this.attr({"fill-opacity": 0});
+        this.animate({"fill-opacity": 0}, 250);
         connect_mode = false;
         connect_mode_shape = null;
       } else {
-        this.attr({"fill-opacity": .5});
+        this.animate({"fill-opacity": .5}, 250);
         connect_mode = true;
         connect_mode_shape = this;
       }
@@ -391,7 +389,7 @@ window.onload = function ()
                       +(Math.max(c,d)*font_width),
       paper_height = ybegin+2*box_height+line_margin;
   r.setSize(paper_width, paper_height);
-  rm_shape = r.rect(5, line_margin+ybegin, 50, box_height).attr({"fill":"red","stroke":0});
+  rm_shape = r.rect(5, line_margin+ybegin, 50, box_height).attr({"fill":"#fff","stroke":0}).animate({"fill":"red"}, 1000);
   rm_shape.toBack();
   rm_shape["rm_shape"] = true;
   // source objs
