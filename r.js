@@ -368,6 +368,47 @@ make_objs = function (a, type)
   }
 };
 
+/*
+ * data
+ *
+ */
+var extract_data = function ()
+{
+  el = document.getElementById("data");
+  d = {};
+  d["source"] = [];
+  d["target"] = [];
+  d["align"] = [];
+  // target
+  var ids = [];
+  target_shapes.sort(function(a, b) {
+    return a["grid_"]-b["grid_"];
+  });
+  for (var i=0; i<target_shapes.length; i++) {
+    d["target"].push(target_shapes[i].pair.attr("text"));
+    ids.push(target_shapes[i]["id_"]);
+  }
+  // alignment
+  for (key in connections) {
+    var a = key.split('-');
+    var src = a[0], tgt = ids.indexOf(parseInt(a[1]));
+    d["align"].push(src+'-'+tgt);
+  }
+  // source
+  for (var i=0; i<shapes.length; i++) {
+    if (shapes[i]["type_"] == "source") {
+      d["source"].push(shapes[i].pair.attr("text"));
+    } else {
+      break;
+    }
+  }
+  // output
+  s = JSON.stringify(d);
+  el.innerHTML = s;
+
+  return s;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
