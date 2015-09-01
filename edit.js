@@ -412,7 +412,7 @@ var extract_data = function ()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-window.onload = function ()
+var init = function ()
 {
   // canvas
   r = Raphael("holder",0,0);
@@ -439,5 +439,43 @@ window.onload = function ()
   make_objs(target, "target");
   // initial connections from alignment
   make_conns_from_a(align);
+},
+reset = function()
+{
+  shapes_by_id = {};
+  curDrag = null;
+  curEd = null;
+  curEdShape = null;
+  shapes = [];
+  target_shapes = [];
+  texts = [];
+  connections = {};
+  margin = 30;
+  padding = margin/3;
+  xbegin = 80;
+  ybegin = 5;
+  box_height = 50;
+  line_margin = 150;
+  ysource = ybegin;
+  ytarget = ysource+line_margin;
+  font_size = 20;
+  font_width = -1;
+  id = 0;
+  connect_mode = false;
+  connect_mode_shape = null;
+  edit_mode = false;
+  rm_shape = null;
+
+  document.getElementById("holder").parentElement.removeChild(document.getElementById("holder"));
+  var new_holder = document.createElement("div");
+  new_holder.setAttribute("id","holder");
+  document.getElementById("wrapper").appendChild(new_holder);
+
+  init();
+};
+
+window.onload = function ()
+{
+  init();
 };
 
