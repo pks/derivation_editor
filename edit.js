@@ -104,6 +104,7 @@ make_conns_from_a = function (align)
  */
 var dragger = function ()
 {
+  if (edit_mode) return;
   curDrag = this;
   if (this.type == "text")
     curDrag = this.pair;
@@ -120,6 +121,7 @@ var dragger = function ()
 },
 move = function (dx, dy)
 {
+  if (edit_mode) return;
   var att = { x: this.ox + dx, y: this.oy };
   this.attr(att);
   att = { x: this.pair.ox + dx, y: this.pair.oy };
@@ -299,14 +301,14 @@ var make_obj = function(x, text, type)
         } else if (e.keyCode==27||e.keyCode==37||e.keyCode==38||e.keyCode==39||e.keyCode==40) { // esc, arrows, backspace
           return;
         } else if (e.keyCode == 8) { // backspace
-          curEdShape.animate({width:curEdShape.getBBox().width-14},125);
+          curEdShape.animate({width:curEdShape.getBBox().width-font_width},125);
           setTimeout(function(){snap_to_grid(true);},125);
         } else {
-          curEdShape.animate({width:curEdShape.getBBox().width+font_width},125);
+          curEdShape.animate({width:(this.value.length*font_width)+2*font_width+2*padding},25);
           setTimeout(function(){
             snap_to_grid(true);
             r.setSize(r.width+font_width, r.height);
-          },125);
+          },25);
         }
       });
       input.addEventListener("blur", function(e) {
