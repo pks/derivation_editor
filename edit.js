@@ -312,6 +312,7 @@ var make_obj = function(x, text, type)
       input.addEventListener("blur", function(e) {
           curEd.inlineTextEditing.stopEditing();
           curEdShape.toFront();
+          curEd.toBack();
           curEdShape.animate({width:curEd.getBBox().width+(margin-padding)},125);
           setTimeout(function(){snap_to_grid(true);},125);
           edit_mode = false;
