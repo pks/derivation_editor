@@ -430,7 +430,7 @@ var init = function ()
                       +(Math.max(c,d)*font_width),
       paper_height = ybegin+2*box_height+line_margin;
   r.setSize(paper_width, paper_height);
-  rm_shape = r.rect(5, line_margin+ybegin, 50, box_height).attr({"fill":"#fff","stroke":0}).animate({"fill":"red"}, 1000);
+  rm_shape = r.rect(5, line_margin+ybegin, 50, box_height).attr({"fill":"#fff","stroke":0}).animate({"fill":"red"}, 2000);
   rm_shape.toBack();
   rm_shape["rm_shape"] = true;
   // source objs
