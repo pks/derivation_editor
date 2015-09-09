@@ -295,14 +295,19 @@ var make_obj = function(x, text, type)
       curEdShape = this;
       var input = curEd.inlineTextEditing.startEditing();
       input.addEventListener("keypress", function(e) {
-        if (e.keyCode == 13) { // return
-          e.preventDefault();
-          return;
-        } else if (e.keyCode==27||e.keyCode==37||e.keyCode==38||e.keyCode==39||e.keyCode==40) { // esc, arrows, backspace
+        if (e.keyCode==27||e.keyCode==37||e.keyCode==38||e.keyCode==39||e.keyCode==40) { // esc, arrows, backspace
           return;
         } else if (e.keyCode == 8) { // backspace
           curEdShape.animate({width:curEdShape.getBBox().width-font_width},125);
           setTimeout(function(){snap_to_grid(true);},125);
+        } else if (e.keyCode == 13) { // enter
+          e.preventDefault();
+          curEd.inlineTextEditing.stopEditing();
+          curEdShape.toFront();
+          curEd.toBack();
+          curEdShape.animate({width:curEd.getBBox().width+(margin-padding)},125);
+          setTimeout(function(){snap_to_grid(true);},125);
+          edit_mode = false;
         } else {
           curEdShape.animate({width:(this.value.length*font_width)+2*font_width+2*padding},25);
           setTimeout(function(){
