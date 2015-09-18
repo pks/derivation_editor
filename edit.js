@@ -30,7 +30,9 @@ var shapes_by_id = {},
     shape_att = { fill: "#eee", stroke: "#000", "fill-opacity": 0, "stroke-width": 1 }
     source = ["Das", "ist ein", "kleines", "Haus", "gewesen", "."], // data
     target = ["This", "has been", "a", "small", "house", "."],      // ^
-    align  = [0, 1, 3, 4, 1, 5];                                    // ^
+    align  = [0, 1, 3, 4, 1, 5],
+    new_pos = -1,
+    old_pos = -1;
 
 /*
  * connection
@@ -106,6 +108,7 @@ var dragger = function ()
 {
   if (edit_mode) return;
   curDrag = this;
+  old_pos = curDrag["grid_"];
   if (this.type == "text")
     curDrag = this.pair;
   curDrag.toFront();
@@ -138,6 +141,9 @@ move = function (dx, dy)
  */
 var collide = function collide(obj)
 {
+  if (!obj["id_"])
+    return;
+  debug();
   if (obj.type != 'rect') {
     return;
   }
@@ -145,31 +151,56 @@ var collide = function collide(obj)
     curDrag["delete_me_"] = true;
     return;
   }
-  if (curDrag["grid_"] > obj["grid_"]) {
-    if (curDrag.getBBox().width < obj.getBBox().width &&
+  if (curDrag["grid_tmp_"] > obj["grid_tmp_"]) { // right -> left
+    /*if (curDrag.getBBox().width < obj.getBBox().width &&
         curDrag.getBBox().x > (obj.getBBox().x+obj.getBBox().width/3)) {
       return;
-    }
+    }*/
     att = { x: obj.attr("x")+curDrag.getBBox().width+(margin-2*padding) };
     obj.attr(att);
     att = { x: obj.pair.attr("x")+curDrag.getBBox().width+(margin-2*padding) };
     obj.pair.attr(att);
-  } else {
-    if (curDrag.getBBox().width < obj.getBBox().width &&
+  } else { // left -> right
+    /*if (curDrag.getBBox().width < obj.getBBox().width &&
         curDrag.getBBox().x < (obj.getBBox().x+obj.getBBox().width/3)) {
       return;
-    }
+    }*/
     att = { x: obj.attr("x")-(curDrag.getBBox().width+(margin-2*padding)) };
     obj.attr(att);
     att = { x: obj.pair.attr("x")-(curDrag.getBBox().width+(margin-2*padding)) };
     obj.pair.attr(att);
   }
   // switch grid pos
-  var tmpx = curDrag["grid_"];
-  curDrag["grid_"] = obj["grid_"];
-  obj["grid_"] = tmpx;
+  new_pos = obj["grid_tmp_"];
+  var tmpx = curDrag["grid_tmp_"];
+  curDrag["grid_tmp_"] = obj["grid_tmp_"];
+  obj["grid_tmp_"] = tmpx;
+  //snap_to_grid(true,true);
 },
+debug = function () {
+  var s = "";
+  for (var i=0; i<target_shapes.length; i++) {
+    s+= target_shapes[i]["id_"] + " " ;
+  }
+  document.getElementById("debug").innerHTML = s;
+}
+debug1 = function () {
+  var s = "";
+  for (var i=0; i<target_shapes.length; i++) {
+    s+= target_shapes[i]["id_"] + "(" + target_shapes[i]["grid_"]+") " ;
+  }
+  document.getElementById("debug").innerHTML = s;
+  document.getElementById("debug").innerHTML += " new:"+new_pos + " old:"+old_pos;
+}
+debug2 = function () {
+  var s = "";
+  for (var i=0; i<target_shapes.length; i++) {
+    s+= target_shapes[i]["grid_tmp_"] + " " ;
+  }
+  document.getElementById("debug").innerHTML = s;
+}
 up = function () {
+  debug();
   if (this["delete_me_"]) {
     var del = shapes_by_id[this["id_"]];
     for (key in connections) {
@@ -204,12 +235,58 @@ up = function () {
 
   snap_to_grid(true);
 },
-snap_to_grid = function (anim=false)
+snap_to_grid = function (anim=false,drag=false)
 {
   // just x coord, y is fixed in drag
   var d = xbegin;
   var d2 = 0;
+  var b = false;
   // just target objs
+  target_shapes.sort(function(a, b) {
+    return a["grid_"]-b["grid_"];
+  });
+  /*for (var i=0; i < target_shapes.length; i++) {
+    if (target_shapes[i]["id_"] == curDrag["id_"]) {
+      b = true;
+      target_shapes[i]["grid_"] = new_pos;
+      continue;
+    }
+    if (b && (new_pos>old_pos)) {
+      target_shapes[i]["grid_"] += 1;
+    } else if (b && new_pos<old_pos) {
+      target_shapes[i]["grid_"] -= 1;
+    }
+  }*/
+  if (new_pos == old_pos)
+    return;
+  curDrag["grid_"] = new_pos;
+  cur_id = curDrag["id_"];
+  if (new_pos > old_pos) {
+    for (var i=0; i < target_shapes.length; i++) {
+      pos = target_shapes[i]["grid_"];
+      id = target_shapes[i]["id_"];
+      if (id == cur_id)
+        continue;
+      if (pos >= old_pos && pos <= new_pos) {
+        target_shapes[i]["grid_"] -= 1;
+      } else {
+        continue;
+      }
+    }
+  } else if (new_pos < old_pos) {
+    for (var i=0; i < target_shapes.length; i++) {
+      pos = target_shapes[i]["grid_"];
+      id = target_shapes[i]["id_"];
+      if (id == cur_id)
+        continue;
+      if (pos >= new_pos && pos <= old_pos) {
+        target_shapes[i]["grid_"] += 1;
+      } else {
+        continue;
+      }
+    }
+  }
+  debug1();
   target_shapes.sort(function(a, b) {
     return a["grid_"]-b["grid_"];
   });
@@ -272,6 +349,7 @@ var make_obj = function(x, text, type)
     sh.attr({ cursor: "move" });
     tx.drag(move, dragger, up);
     sh["grid_"] = id;
+    sh["grid_tmp_"] = id;
     sh.click(function() {
       if (connect_mode) {
         if (connections[conn_str(connect_mode_shape,this)]) {
@@ -352,7 +430,7 @@ add_obj = function()
     }
   }
   if (!shapes[max_idx]) {
-    make_obj(xbegin+padding, "NEW", "target", 0);
+    make_obj(xbegin+padding, "X", "target", 0);
   } else {
     make_obj(shapes[max_idx].getBBox().x2+(margin-padding),
              "NEW",
