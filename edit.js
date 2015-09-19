@@ -220,8 +220,11 @@ up = function () {
     }
     target_shapes.splice(i, 1);
     delete shapes_by_id[this["id_"]];
-    del.pair.remove();
-    del.remove();
+    var x = del.pair;
+    if (x)
+      x.remove();
+    if (del)
+      del.remove();
     snap_to_grid(true);
 
     return;
@@ -427,7 +430,7 @@ add_obj = function()
     make_obj(xbegin+padding, "X", "target", 0);
   } else {
     make_obj(shapes[max_idx].getBBox().x2+(margin-padding),
-             "NEW",
+             "X",
              "target",
              max+1);
   }
