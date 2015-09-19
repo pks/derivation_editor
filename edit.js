@@ -10,6 +10,7 @@ var r,
     texts         = [],
     connections   = {},
     id            = 0,
+    next_grid     = 0,
     // layout
     margin      = 30,
     padding     = margin/3,
@@ -193,14 +194,18 @@ var collide = function collide (obj)
 debug = function () {
   var s = "";
   for (var i=0; i<target_shapes.length; i++) {
-    s+= target_shapes[i]["id_"] + "(" + target_shapes[i]["grid_"]+") " ;
+    s+= target_shapes[i]["id_"] + "@" + target_shapes[i]["grid_"]+" " ;
   }
   document.getElementById("debug").innerHTML = s;
   document.getElementById("debug").innerHTML += " new:"+new_pos + " old:"+old_pos;
+  document.getElementById("debug").innerHTML += " next_grid:"+next_grid;
 },
 up = function () {
   if (this["delete_me_"]) {
     var del = shapes_by_id[this["id_"]];
+    if (!del)
+      return;
+    var del_grid = del["grid_"]
     for (key in connections) {
       if (key.split("-")[1] == cur_drag["id_"]) {
         rm_conn(key.split("-")[0], key.split("-")[1]);
@@ -225,6 +230,18 @@ up = function () {
       x.remove();
     if (del)
       del.remove();
+    var max = -1;
+    for (var i=0; i<target_shapes.length; i++) {
+      var g = target_shapes[i]["grid_"];
+      if (g > del_grid) {
+        target_shapes[i]["grid_"] -= 1;
+      }
+      if (g > max)
+        max = g;
+    }
+    next_grid = g;
+    if (!next_grid) // empty
+      next_grid = 0;
     snap_to_grid(true);
 
     return;
@@ -252,8 +269,8 @@ snap_to_grid = function (anim=false)
   // left -> right
     for (var i=0; i < target_shapes.length; i++) {
       pos = target_shapes[i]["grid_"];
-      id = target_shapes[i]["id_"];
-      if (id == cur_id)
+      id_ = target_shapes[i]["id_"];
+      if (id_ == cur_id)
         continue;
       if (pos >= old_pos && pos <= new_pos) {
         target_shapes[i]["grid_"] -= 1;
@@ -265,8 +282,8 @@ snap_to_grid = function (anim=false)
   // right -> left
     for (var i=0; i < target_shapes.length; i++) {
       pos = target_shapes[i]["grid_"];
-      id = target_shapes[i]["id_"];
-      if (id == cur_id)
+      id_ = target_shapes[i]["id_"];
+      if (id_ == cur_id)
         continue;
       if (pos >= new_pos && pos <= old_pos) {
         target_shapes[i]["grid_"] += 1;
@@ -341,8 +358,8 @@ var make_obj = function(x, text, type)
     sh.drag(move, dragger, up).onDragOver( function(obj) { collide(obj); })
     sh.attr({ cursor: "move" });
     tx.drag(move, dragger, up);
-    sh["grid_"] = id;
-    sh["grid_tmp_"] = id;
+    sh["grid_"] = next_grid;
+    sh["grid_tmp_"] = next_grid;
     sh.click(function() {
       if (connect_mode) {
         if (connections[conn_str(connect_mode_shape,this)]) {
@@ -416,6 +433,8 @@ var make_obj = function(x, text, type)
     });
   }
   id++;
+  if (type == "target")
+    next_grid++;
 },
 add_obj = function()
 {
@@ -427,15 +446,15 @@ add_obj = function()
     }
   }
   if (!shapes[max_idx]) {
-    make_obj(xbegin+padding, "X", "target", 0);
+    make_obj(xbegin+padding, "X", "target");
   } else {
     make_obj(shapes[max_idx].getBBox().x2+(margin-padding),
              "X",
-             "target",
-             max+1);
+             "target");
   }
   r.setSize(r.width+target_shapes[target_shapes.length-1].getBBox().width+margin, r.height);
 
+  cur_drag = null;
   snap_to_grid(true);
 },
 make_objs = function (a, type)
@@ -516,7 +535,7 @@ var init = function ()
   rm_shape = r.rect(5, line_margin+ybegin, 50, box_height).attr({"fill":"#fff","stroke":0}).animate({"fill":"red"}, 2000);
   rm_shape.toBack();
   rm_shape["rm_shape_"] = true;
-  rm_shape["id_"] = -1;
+  rm_shape["id_"]       = -1;
   // source objs
   make_objs(source, "source");
   // target objs
@@ -532,6 +551,7 @@ reset = function()
   texts         = [];
   connections   = {};
   id            = 0;
+  next_grid     = 0;
   cur_drag = null;
   edit_mode    = false;
   cur_ed       = null;
