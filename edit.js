@@ -12,20 +12,22 @@ var r,
     id            = 0,
     next_grid     = 0,
     // layout
-    margin      = 30,
-    padding     = margin/3,
-    xbegin      = 80,
-    ybegin      = 5,
-    box_height  = 50,
-    line_margin = 150,
-    ysource     = ybegin,
-    ytarget     = ysource+line_margin;
-    font_size   = 20,
-    font_width  = -1,
-    text_att = { "fill": "#000", "stroke": "none", "text-anchor": "start",
+    margin          = 30,
+    padding         = margin/3,
+    xbegin          = 80,
+    ybegin          = 5,
+    box_height      = 50,
+    line_margin     = 150,
+    ysource         = ybegin,
+    ytarget         = ysource+line_margin;
+    font_size       = 13,
+    font_width      = -1,
+    stroke_width    = 1,
+    stroke_width_hi = 3,
+    text_att  = { "fill": "#000", "stroke": "none", "text-anchor": "start",
                  "font-size": font_size, "font-family": "Times New Roman" },
     shape_att = { "fill": "#eee", "stroke": "#000", "fill-opacity": 0,
-                  "stroke-width": 1 }
+                  "stroke-width": stroke_width }
     // dragging
     cur_drag = null,
     new_pos = -1,
@@ -42,7 +44,8 @@ var r,
     // data
     source = ["Das", "ist ein", "kleines", "Haus", "gewesen", "."],
     target = ["This", "has been", "a", "small", "house", "."],
-    align  = [0, 1, 3, 4, 1, 5];
+    align  = [0, 1, 3, 4, 1, 5],
+    data = null;
 
 /*
  * connection
@@ -101,12 +104,15 @@ rm_conn = function(id1, id2)
     if (b)
       break;
   }
+  shapes_by_id[id1].attr({"stroke-width":stroke_width});
 }
 make_conns_from_a = function (align)
 {
-  var offset = source.length-1;
+  var offset = source.length;
   for (var i=0; i < align.length; i++) {
-    make_conn(shapes[i], shapes[offset+align[i]+1]);
+    for (var j=0; j<align[i].length; j++) {
+      make_conn(shapes[i], shapes[offset+align[i][j]]);
+    }
   }
 }
 
@@ -432,6 +438,41 @@ var make_obj = function(x, text, type)
       }
     });
   }
+  // mouseover -out
+  sh.mouseover(function() {
+    var idx, other_idx;
+    if (this["type_"] == "target") {
+      idx = 1;
+      other_idx = 0;
+    } else {
+      idx = 0;
+      other_idx = 1;
+    }
+    for (c in connections) {
+      if (parseInt(c.split("-")[idx]) == this["id_"]) {
+        connections[c].line.attr({"stroke-width":stroke_width_hi});
+        shapes_by_id[parseInt(c.split("-")[other_idx])].attr({"stroke-width":stroke_width_hi});
+      }
+    }
+    this.animate({"stroke-width":stroke_width_hi})
+  });
+  sh.mouseout(function() {
+    var idx, other_idx;
+    if (this["type_"] == "target") {
+      idx = 1;
+      other_idx = 0;
+    } else {
+      idx = 0;
+      other_idx = 1;
+    }
+    for (c in connections) {
+      if (parseInt(c.split("-")[idx]) == this["id_"]) {
+        connections[c].line.attr({"stroke-width":stroke_width});
+        shapes_by_id[parseInt(c.split("-")[other_idx])].attr({"stroke-width":stroke_width});
+      }
+    }
+    this.animate({"stroke-width":stroke_width})
+  });
   id++;
   if (type == "target")
     next_grid++;
@@ -514,6 +555,30 @@ var extract_data = function ()
 
 ///////////////////////////////////////////////////////////////////////////////
 
+function loadJSON(callback) {
+  /*var xobj = new XMLHttpRequest();
+      xobj.overrideMimeType("application/json");
+  xobj.open('GET', 'http://simianer.de/tmp/example.json', true);
+  xobj.onreadystatechange = function () {
+    if (xobj.readyState == 4 && xobj.status == "200") {
+      callback(xobj.responseText);
+    }
+  };
+  xobj.send(null);*/
+}
+
+function load_data()
+{
+  //loadJSON(function(r) {
+    //data=JSON.parse(r);
+    data=JSON.parse('{"phrase_alignment":[[0,2],[1],[0,2],[3],[4],[5],[6],[7,9],[8],[7,9],[10,18],[11],[10,18],[12],[13],[14],[15],[16],[17],[10,18],[19],[20],[21,23],[22],[21,23],[24],[25]],"source_groups":["hier also","ein bescheidener",",","auf alle","demokratien","anzuwendender","vorschlag",":","der markt für","ideen","funktioniert","besser",",","wenn es den","bürgern","leichter","fällt , die","zielkonflikte zwischen","treffsicherheit","der","aussagen und","unterhaltung","oder zwischen","treffsicherheit","und","parteitreue","zu erkennen ."],"target_groups":["so here","a modest",",","to all","democracies","anzuwendender","proposal",":","the market for","ideas","works","better","if","citizens","easier",", the","trade @-@ offs between","treffsicherheit","the","statements and","entertainment","or","treffsicherheit","and","parteitreue","."]}');
+    source = data["source_groups"];
+    target = data["target_groups"];
+    align  = data["phrase_alignment"];
+    init();
+  //});
+}
+
 var init = function ()
 {
   // canvas
@@ -570,6 +635,6 @@ reset = function()
 
 window.onload = function ()
 {
-  init();
+  load_data();
 };
 
