@@ -45,7 +45,8 @@ var r,
     // data
     source = ["Das", "ist ein", "kleines", "Haus", "gewesen", "."],
     target = ["This", "has been", "a", "small", "house", "."],
-    align  = [0, 1, 3, 4, 1, 5],
+    //target = [0,1,2,3,4,5],
+    align  = [[0], [1], [3], [4], [1], [5]],
     data = null;
 
 /*
@@ -253,8 +254,8 @@ up = function () {
     next_grid = g;
     if (!next_grid) // empty
       next_grid = 0;
+    cur_drag = null;
     snap_to_grid(true);
-
     return;
   }
   if (this.type != "text")
@@ -273,7 +274,7 @@ snap_to_grid = function (anim=false)
     return a["grid_"]-b["grid_"];
   });
   // switch
-  if (cur_drag) { // fix glitch when calling from add_obj
+  if (cur_drag) { // fix glitch when calling from add_obj() and up()
   cur_drag["grid_"] = new_pos;
   cur_id = cur_drag["id_"];
   if (new_pos > old_pos) {
