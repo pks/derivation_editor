@@ -35,6 +35,7 @@ var r,
     // connecting
     connect_mode       = false,
     connect_mode_shape = null,
+    new_conns          = [],
     // editing
     cur_ed      = null,
     cur_ed_shape = null,
@@ -86,6 +87,10 @@ var conn_str = function (obj1, obj2)
 var make_conn = function(obj1, obj2)
 {
   connections[conn_str(obj1,obj2)] = r.connection(obj1, obj2);
+  if (connect_mode) {
+    new_conns.push(connections[conn_str(obj1,obj2)]);
+    connections[conn_str(obj1,obj2)].line.attr({"stroke-width":stroke_width_hi});
+  }
 },
 rm_conn = function(id1, id2)
 {
@@ -472,6 +477,10 @@ var make_obj = function(x, text, type)
       }
     }
     this.animate({"stroke-width":stroke_width})
+    for (var i=0; i<new_conns.length; i++) {
+      new_conns[i].line.attr({"stroke-width":stroke_width});
+    }
+    new_conns = [];
   });
   id++;
   if (type == "target")
