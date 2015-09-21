@@ -16,14 +16,16 @@ var r,
     padding         = margin/3,
     xbegin          = 80,
     ybegin          = 5,
-    box_height      = 50,
-    line_margin     = 150,
+    box_height      = 30,
+    line_margin     = 80,
     ysource         = ybegin,
     ytarget         = ysource+line_margin;
-    font_size       = 13,
+    font_size       = 10,
     font_width      = -1,
     stroke_width    = 1,
     stroke_width_hi = 3,
+    align_stroke    = "#eee",
+    align_stroke_hi = "#000",
     text_att  = { "fill": "#000", "stroke": "none", "text-anchor": "start",
                  "font-size": font_size, "font-family": "Times New Roman" },
     shape_att = { "fill": "#eee", "stroke": "#000", "fill-opacity": 0,
@@ -75,7 +77,7 @@ Raphael.fn.connection = function (obj1, obj2, line, bg)
   } else {
     return {
       bg: bg && bg.split && this.path(path).attr({stroke: bg.split("|")[0], fill: "none", "stroke-width": bg.split("|")[1] || 3}),
-      line: this.path(path).attr({stroke: "#000", fill: "none"}),
+      line: this.path(path).attr({stroke: align_stroke, fill: "none"}),
       from: obj1,
       to: obj2
     };
@@ -90,7 +92,7 @@ var make_conn = function(obj1, obj2)
   connections[conn_str(obj1,obj2)] = r.connection(obj1, obj2);
   if (connect_mode) {
     new_conns.push(connections[conn_str(obj1,obj2)]);
-    connections[conn_str(obj1,obj2)].line.attr({"stroke-width":stroke_width_hi});
+    connections[conn_str(obj1,obj2)].line.attr({"stroke":align_stroke_hi,"stroke-width":stroke_width_hi});
   }
 },
 rm_conn = function(id1, id2)
@@ -456,7 +458,7 @@ var make_obj = function(x, text, type)
     }
     for (c in connections) {
       if (parseInt(c.split("-")[idx]) == this["id_"]) {
-        connections[c].line.attr({"stroke-width":stroke_width_hi});
+        connections[c].line.attr({"stroke":align_stroke_hi,"stroke-width":stroke_width_hi});
         shapes_by_id[parseInt(c.split("-")[other_idx])].attr({"stroke-width":stroke_width_hi});
       }
     }
@@ -473,13 +475,13 @@ var make_obj = function(x, text, type)
     }
     for (c in connections) {
       if (parseInt(c.split("-")[idx]) == this["id_"]) {
-        connections[c].line.attr({"stroke-width":stroke_width});
+        connections[c].line.attr({"stroke":align_stroke,"stroke-width":stroke_width});
         shapes_by_id[parseInt(c.split("-")[other_idx])].attr({"stroke-width":stroke_width});
       }
     }
     this.animate({"stroke-width":stroke_width})
     for (var i=0; i<new_conns.length; i++) {
-      new_conns[i].line.attr({"stroke-width":stroke_width});
+      new_conns[i].line.attr({"stroke":align_stroke,"stroke-width":stroke_width});
     }
     new_conns = [];
   });
