@@ -4,19 +4,20 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>derivation editor</title>
-  <script src="raphael.js" type="text/javascript" charset="utf-8"></script>
-  <!--<script src="Raphael.InlineTextEditing/raphael.inline_text_editing.js" charset="utf-8"></script>-->
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js" charset="utf-8"></script>
+  <script src="https://raw.githubusercontent.com/DmitryBaranovskiy/raphael/v2.1.2/raphael-min.js" type="text/javascript" charset="utf-8"></script>
   <script src="https://raw.githubusercontent.com/marmelab/Raphael.InlineTextEditing/fd578f0eddd4172e6d9b3fde4cb67576cf546dc1/raphael.inline_text_editing.js" charset="utf-8"></script>
-  <script src="edit.js" type="text/javascript" charset="utf-8"></script>
+  <script src="dummy.js" type="text/javascript" charset="utf-8"></script>
+  <script src="derivation-editor.js" type="text/javascript" charset="utf-8"></script>
 </head>
-<body>
+<body onload="_demo()">
   <div id="derivation_editor">
     <div id="holder"></div>
   </div>
-  <input type="button" value="+" onClick="add_obj()" />
-  <input type="button" value="reset" onClick="reset();" />
-  <input type="button" value="D" onClick="extract_data()" />
-  <pre id="data">
+  <input type="button" value="+" onclick="DE_add_object()" />
+  <input type="button" value="reset" onclick="DE_init();" />
+  <input type="button" value="D" onclick="DE_extract_data()" />
+  <pre id="data"></pre>
   <pre id="debug" style="background:red;width:100%"></pre>
   </pre>
   <h3>Instructions</h3>
@@ -29,7 +30,7 @@
     <li><strong>reset:</strong> click 'reset' button to start from scratch</li>
     <li><strong>show recorded data:</strong>click 'D' button</li>
   </ul>
-  <h3>TODO</h3>
+<!--  <h3>TODO</h3>
   <ul>
     <li><strike>edit text and resize, move (dblclick)</strike></li>
     <li><strike>remove objs (move to special field)</strike></li>
@@ -45,7 +46,7 @@
     <li>instructions should be rewritten</li>
     <li>no undo</li>
     <li>source side is fixed</li>
-  </ul>
+  </ul> -->
 </body>
 </html>
 
