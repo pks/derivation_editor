@@ -45,11 +45,9 @@ var r,
     // removing
     rm_shape = null,
     // data
-    source = ["Das", "ist ein", "kleines", "Haus", "gewesen", "."],
-    target = ["This", "has been", "a", "small", "house", "."],
-    //target = [0,1,2,3,4,5],
-    align  = [[0], [1], [3], [4], [1], [5]],
-    data = null;
+    source = null,
+    target = null,
+    align  = null;
 
 /*
  * connection
@@ -491,6 +489,7 @@ var make_obj = function(x, text, type)
 },
 add_obj = function()
 {
+  if (!data) return;
   var max=0, max_idx=-1;
   for (var i=0; i < shapes.length; i++) {
     if (shapes[i]["grid_"] > max) {
@@ -583,45 +582,32 @@ function load_data()
 {
   //loadJSON(function(r) {
     //data=JSON.parse(r);
-    data=JSON.parse('{"phrase_alignment":[[0,2],[1],[0,2],[3],[4],[5],[6],[7,9],[8],[7,9],[10,18],[11],[10,18],[12],[13],[14],[15],[16],[17],[10,18],[19],[20],[21,23],[22],[21,23],[24],[25]],"source_groups":["hier also","ein bescheidener",",","auf alle","demokratien","anzuwendender","vorschlag",":","der markt für","ideen","funktioniert","besser",",","wenn es den","bürgern","leichter","fällt , die","zielkonflikte zwischen","treffsicherheit","der","aussagen und","unterhaltung","oder zwischen","treffsicherheit","und","parteitreue","zu erkennen ."],"target_groups":["so here","a modest",",","to all","democracies","anzuwendender","proposal",":","the market for","ideas","works","better","if","citizens","easier",", the","trade @-@ offs between","treffsicherheit","the","statements and","entertainment","or","treffsicherheit","and","parteitreue","."]}');
+    //data=JSON.parse('{"phrase_alignment":[[0,2],[1],[0,2],[3],[4],[5],[6],[7,9],[8],[7,9],[10,18],[11],[10,18],[12],[13],[14],[15],[16],[17],[10,18],[19],[20],[21,23],[22],[21,23],[24],[25]],"source_groups":["hier also","ein bescheidener",",","auf alle","demokratien","anzuwendender","vorschlag",":","der markt für","ideen","funktioniert","besser",",","wenn es den","bürgern","leichter","fällt , die","zielkonflikte zwischen","treffsicherheit","der","aussagen und","unterhaltung","oder zwischen","treffsicherheit","und","parteitreue","zu erkennen ."],"target_groups":["so here","a modest",",","to all","democracies","anzuwendender","proposal",":","the market for","ideas","works","better","if","citizens","easier",", the","trade @-@ offs between","treffsicherheit","the","statements and","entertainment","or","treffsicherheit","and","parteitreue","."]}');
+    //data = JSON.parse(document.getElementById("last_post_edit").value);
     source = data["source_groups"];
     target = data["target_groups"];
     align  = data["phrase_alignment"];
-    init();
+    init_derivation_editor();
   //});
 }
 
-var init = function ()
+var reset_derivation_edtior = function(load=false)
 {
-  // canvas
-  r = Raphael("holder",0,0);
-  var c = 0,
-      d = 0,
-      a = null;
-  for (var i=0; i<source.length; i++) {
-    c += source[i].length;
+  if (!data) return;
+  if (r) {
+    for (var x in shapes_by_id) {
+      if (x.remove) {
+        x.pair.remove();
+        x.remove();
+      }
+    }
+    for (var x in connections) {
+      if (x.line)
+        x.line.remove()
+    }
+    r.remove();
   }
-  for (var i=0; i<target.length; i++) {
-    d += target[i].length;
-  }
-  font_width = r.text(-100,-100,"m").getBBox().width;
-  var paper_width  = xbegin+(Math.max(source.length,target.length)*(margin+padding))
-                      +(Math.max(c,d)*font_width),
-      paper_height = ybegin+2*box_height+line_margin;
-  r.setSize(paper_width, paper_height);
-  rm_shape = r.rect(5, line_margin+ybegin, 50, box_height).attr({"fill":"#fff","stroke":0}).animate({"fill":"red"}, 2000);
-  rm_shape.toBack();
-  rm_shape["rm_shape_"] = true;
-  rm_shape["id_"]       = -1;
-  // source objs
-  make_objs(source, "source");
-  // target objs
-  make_objs(target, "target");
-  // initial connections from alignment
-  make_conns_from_a(align);
-},
-reset = function()
-{
+
   shapes_by_id  = {};
   shapes        = [];
   target_shapes = [];
@@ -640,13 +626,38 @@ reset = function()
   document.getElementById("holder").parentElement.removeChild(document.getElementById("holder"));
   var new_holder = document.createElement("div");
   new_holder.setAttribute("id","holder");
-  document.getElementById("wrapper").appendChild(new_holder);
+  $("#derivation_editor").prepend(new_holder);
+  if (load) { load_data() }
+}
 
-  init();
-};
-
-window.onload = function ()
+var init_derivation_editor = function ()
 {
-  load_data();
-};
+  reset_derivation_edtior();
+  // canvas
+  r = Raphael("holder",0,0);
+  var c = 0,
+      d = 0,
+      a = null;
+  for (var i=0; i<source.length; i++) {
+    c += source[i].length;
+  }
+  for (var i=0; i<target.length; i++) {
+    d += target[i].length;
+  }
+  font_width = r.text(-100,-100,"m").getBBox().width;
+  var paper_width  = xbegin+(Math.max(source.length,target.length)*(margin+padding))
+                      +(Math.max(c,d)*font_width), // FIXME
+      paper_height = ybegin+2*box_height+line_margin;
+  r.setSize(paper_width, paper_height);
+  rm_shape = r.rect(5, line_margin+ybegin, 50, box_height).attr({"fill":"#fff","stroke":0}).animate({"fill":"red"}, 2000);
+  rm_shape.toBack();
+  rm_shape["rm_shape_"] = true;
+  rm_shape["id_"]       = -1;
+  // source objs
+  make_objs(source, "source");
+  // target objs
+  make_objs(target, "target");
+  // initial connections from alignment
+  make_conns_from_a(align);
+}
 
