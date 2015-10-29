@@ -12,20 +12,20 @@ var DE_paper,
     DE_id            = 0,
     DE_next_grid     = 0,
     // ui
-    DE_ui_margin          = 30,
+    DE_ui_margin          = 32,
     DE_ui_padding         = DE_ui_margin/3,
-    DE_ui_xbegin          = 80,
+    DE_ui_xbegin          = 64,
     DE_ui_ybegin          = 5,
-    DE_ui_box_height      = 30,
-    DE_ui_line_margin     = 80,
+    DE_ui_box_height      = 32,
+    DE_ui_line_margin     = 64,
     DE_ui_ysource         = DE_ui_ybegin,
     DE_ui_ytarget         = DE_ui_ysource+DE_ui_line_margin;
-    DE_ui_font_size       = 10,
+    DE_ui_font_size       = 14,
     DE_ui_font_width      = -1,
     DE_ui_stroke_width    = 1,
     DE_ui_stroke_width_hi = 3,
-    DE_ui_align_stroke    = "#eee",
-    DE_ui_align_stroke_hi = "#000",
+    DE_ui_align_stroke    = "#ccc",
+    DE_ui_align_stroke_hi = "#aaa",
     DE_ui_text_att  = { "fill": "#000", "stroke": "none",
                         "text-anchor": "start", "font-size": DE_ui_font_size,
                         "font-family": "Times New Roman" },
@@ -40,9 +40,9 @@ var DE_paper,
     DE_connect_mode_shape = null,
     DE_new_conns          = [],
     // editing
-    DE_cur_ed      = null,
+    DE_cur_ed       = null,
     DE_cur_ed_shape = null,
-    DE_edit_mode = false,
+    DE_edit_mode    = false,
     // removing
     DE_rm_shape = null,
     // data
@@ -336,6 +336,9 @@ var snap_to_grid = function (anim=false)
   for (key in DE_connections) {
     DE_paper.connection(DE_connections[key]);
   }
+
+  // now mouseout() can remove highligting
+  DE_cur_drag = null;
 }
 
 var DE_debug_snap_to_grid = function () {
@@ -476,6 +479,8 @@ var DE_make_obj = function (x, text, type)
     this.animate({"stroke-width":DE_ui_stroke_width_hi})
   });
   sh.mouseout(function() {
+    if (DE_cur_drag) return;
+    if (DE_edit_mode) return; // FIXME
     var idx, other_idx;
     if (this["type_"] == "target") {
       idx = 1;
@@ -601,20 +606,20 @@ var DE_reset = function()
     DE_paper.remove();
   }
 
-  DE_shapes_by_id  = {};
-  DE_shapes        = [];
-  DE_target_shapes = [];
-  DE_texts         = [];
-  DE_connections   = {};
-  DE_id            = 0;
-  DE_next_grid     = 0;
-  DE_cur_drag      = null;
-  DE_edit_mode     = false;
-  DE_cur_ed        = null;
-  DE_cur_ed_shape  = null;
+  DE_shapes_by_id       = {};
+  DE_shapes             = [];
+  DE_target_shapes      = [];
+  DE_texts              = [];
+  DE_connections        = {};
+  DE_id                 = 0;
+  DE_next_grid          = 0;
+  DE_cur_drag           = null;
+  DE_edit_mode          = false;
+  DE_cur_ed             = null;
+  DE_cur_ed_shape       = null;
   DE_connect_mode       = false;
   DE_connect_mode_shape = null;
-  DE_rm_shape = null;
+  DE_rm_shape           = null;
 
   document.getElementById("holder").parentElement.removeChild(
     document.getElementById("holder")
@@ -626,6 +631,7 @@ var DE_reset = function()
 
 var DE_init = function ()
 {
+  if (!data) return;
   DE_reset();
 
   DE_data_source = data["source_groups"];
@@ -643,12 +649,12 @@ var DE_init = function ()
   for (var i=0; i<DE_data_target.length; i++) {
     d += DE_data_target[i].length;
   }
-  DE_ui_font_width = DE_paper.text(-100,-100,"m").getBBox().width;
-  var paper_width  = DE_ui_xbegin+(Math.max(DE_data_source.length,DE_data_target.length)*(DE_ui_margin+DE_ui_padding))
-                      +(Math.max(c,d)*DE_ui_font_width), // FIXME
+  DE_ui_font_width = DE_paper.text(-100,-100,"a").getBBox().width;
+  var avg_box_len = (Math.max(c,d)/Math.max(DE_data_source.length,DE_data_target.length))*DE_ui_font_width;
+  var paper_width  = DE_ui_xbegin+(Math.max(DE_data_source.length,DE_data_target.length)*(DE_ui_margin+DE_ui_padding+avg_box_len)),
       paper_height = DE_ui_ybegin+2*DE_ui_box_height+DE_ui_line_margin;
   DE_paper.setSize(paper_width, paper_height);
-  DE_rm_shape = DE_paper.rect(5, DE_ui_line_margin+DE_ui_ybegin, 50, DE_ui_box_height).attr(
+  DE_rm_shape = DE_paper.rect(0, DE_ui_line_margin+DE_ui_ybegin, DE_ui_box_height, DE_ui_box_height).attr(
       {"fill":"#fff","stroke":0}).animate({"fill":"red"}, 2000);
   DE_rm_shape.toBack();
   DE_rm_shape["rm_shape_"] = true;
