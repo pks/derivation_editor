@@ -1,7 +1,9 @@
 Visualize and edit machine translation derivations using raphaeljs.
+Took raphael.inline_text_editing.js from [1].
+Partially adapted from [3] and [2].
 
 Resources:
- * http://grokbase.com/p/gg/raphaeljs/135twn41fq/how-to-move-text-and-rect-together-using-raphaeljs
- * https://github.com/marmelab/Raphael.InlineTextEditing
- * http://raphaeljs.com/graffle.html
+ [1] https://github.com/marmelab/Raphael.InlineTextEditing
+ [2] http://grokbase.com/p/gg/raphaeljs/135twn41fq/how-to-move-text-and-rect-together-using-raphaeljs
+ [3] http://raphaeljs.com/graffle.html
 

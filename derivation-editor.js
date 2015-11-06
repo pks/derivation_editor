@@ -369,7 +369,7 @@ var DE_make_obj = function (x, text, type)
         } else if(e.ctrlKey) { // add
           var x = DE_shapes_by_id[this["id_"]].attr("x")+DE_shapes_by_id[this["id_"]].attr("width")
                   +2*DE_ui_padding;
-          var new_obj = DE_make_obj(x, "test", "target");
+          var new_obj = DE_make_obj(x, "", "target");
           var new_grid = this["grid_"]+1;
           new_obj["grid_"] = new_grid;
           new_obj.pair["grid_"] = new_grid;
@@ -391,6 +391,8 @@ var DE_make_obj = function (x, text, type)
       if (DE_edit_mode) return;
       DE_edit_mode = true;
       this.pair.toFront();
+      this.toBack();
+      //this.animate({"opacity":0}, 250);
       DE_cur_ed = this.pair;
       DE_cur_ed_shape = this;
       var input = DE_cur_ed.inlineTextEditing.startEditing();
@@ -505,10 +507,10 @@ var DE_add_object = function()
     }
   }
   if (!DE_shapes[max_idx]) {
-    DE_make_obj(DE_ui_xbegin+DE_ui_padding, "X", "target");
+    DE_make_obj(DE_ui_xbegin+DE_ui_padding, "", "target");
   } else {
     DE_make_obj(DE_shapes[max_idx].getBBox().x2+(DE_ui_margin-DE_ui_padding),
-             "X",
+             "",
              "target");
   }
   DE_paper.setSize(DE_paper.width+DE_target_shapes[DE_target_shapes.length-1].getBBox().width+DE_ui_margin, DE_paper.height);
