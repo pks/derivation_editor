@@ -195,6 +195,7 @@ var DE_up = function () {
  */
 var DE_collide = function (obj)
 {
+  if (DE_edit_mode) return;
   if (obj["type_"]=="source") return;
   // not a shape
   if (!obj["id_"] || obj.type!="rect")
@@ -441,6 +442,7 @@ var DE_make_obj = function (x, text, type)
   // mouseover -out
   sh.mouseover(function() {
     if (DE_dragging) return;
+    if (DE_edit_mode) return;
     var idx, other_idx;
     if (this["type_"] == "target") {
       idx = 1;
