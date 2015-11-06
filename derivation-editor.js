@@ -489,6 +489,15 @@ var DE_make_obj = function (x, text, type)
   sh.mouseover(function() {
     if (DE_dragging) return;
     if (DE_edit_mode) return;
+
+    // reset others
+    for (c in DE_connections) {
+      DE_connections[c].line.attr({"stroke":DE_ui_align_stroke,"stroke-width":DE_ui_stroke_width});
+    }
+    for (sh in DE_shapes_by_id) {
+      DE_shapes_by_id[sh].attr({"stroke-width":DE_ui_stroke_width});
+    }
+
     var idx, other_idx;
     if (this["type_"] == "target") {
       idx = 1;
