@@ -25,16 +25,18 @@ var DE_paper,
     DE_ui_stroke_width    = 1,
     DE_ui_stroke_width_hi = 3,
     DE_ui_align_stroke    = "#ccc",
-    DE_ui_align_stroke_hi = "#aaa",
+    DE_ui_align_stroke_hi = "#000",
+    DE_ui_fill_opacity_hi = { "fill-opacity": .2 },
     DE_ui_text_att  = { "fill": "#000", "stroke": "none",
                         "text-anchor": "start", "font-size": DE_ui_font_size,
                         "font-family": "Times New Roman" },
-    DE_ui_shape_att = { "fill": "#eee", "stroke": "#000", "fill-opacity": 0,
+    DE_ui_shape_att = { "fill": "red", "stroke": "#000", "fill-opacity": 0,
                         "stroke-width": DE_ui_stroke_width }
     // dragging
     DE_cur_drag = null,
-    DE_new_pos = -1,
-    DE_old_pos = -1;
+    DE_dragging = false,
+    DE_new_pos  = -1,
+    DE_old_pos  = -1;
     // connecting
     DE_connect_mode       = false,
     DE_connect_mode_shape = null,
@@ -45,6 +47,7 @@ var DE_paper,
     DE_edit_mode    = false,
     // removing
     DE_rm_shape = null,
+    DE_rm_mult  = [],
     // data
     DE_data_source = null,
     DE_data_target = null,
@@ -138,6 +141,7 @@ var DE_dragger = function ()
   if (DE_edit_mode)
     return;
   DE_cur_drag = this;
+  DE_dragging = true;
   // drag shape, not text
   if (this.type == "text")
     DE_cur_drag = this.pair;
@@ -151,9 +155,9 @@ var DE_dragger = function ()
   this.pair.ox = this.pair.attr("x");
   this.pair.oy = this.pair.attr("y");
   if (this.type != "text")
-    this.animate({ "fill-opacity": .2 }, 500);
+    this.animate(DE_ui_fill_opacity_hi, 250);
   if (this.pair.type != "text")
-    this.pair.animate({ "fill-opacity": .2 }, 500);
+    this.pair.animate(DE_ui_fill_opacity_hi, 250);
 }
 
 var DE_move = function (dx, dy)
@@ -171,55 +175,15 @@ var DE_move = function (dx, dy)
 }
 
 var DE_up = function () {
+  DE_dragging = false;
   if (this["delete_me_"]) {
-    var del = DE_shapes_by_id[this["id_"]];
-    if (!del)
-      return;
-    var del_grid = del["grid_"]
-    for (key in DE_connections) {
-      if (key.split("-")[1] == DE_cur_drag["id_"]) {
-        DE_rm_conn(key.split("-")[0], key.split("-")[1]);
-      }
-    }
-    var i=DE_data_source.length;
-    for (; i<DE_shapes.length; i++) {
-      if (DE_shapes[i] == this) {
-        break;
-      }
-    }
-    DE_shapes.splice(i, 1);
-    for (var i=0; i<DE_target_shapes.length; i++) {
-      if (DE_target_shapes[i] == this) {
-        break;
-      }
-    }
-    DE_target_shapes.splice(i, 1);
-    delete DE_shapes_by_id[this["id_"]];
-    var x = del.pair;
-    if (x)
-      x.remove();
-    if (del)
-      del.remove();
-    var max = -1;
-    for (var i=0; i<DE_target_shapes.length; i++) {
-      var g = DE_target_shapes[i]["grid_"];
-      if (g > del_grid) {
-        DE_target_shapes[i]["grid_"] -= 1;
-      }
-      if (g > max)
-        max = g;
-    }
-    DE_next_grid = g;
-    if (!DE_next_grid) // empty
-      DE_next_grid = 0;
-    DE_cur_drag = null;
-    snap_to_grid(true);
+    rm_obj(this);
     return;
   }
   if (this.type != "text")
-    this.animate({"fill-opacity": 0}, 500);
+    this.animate({"fill-opacity": 0}, 250);
   if (this.pair.type != "text")
-    this.pair.animate({"fill-opacity": 0}, 500);
+    this.pair.animate({"fill-opacity": 0}, 250);
 
   snap_to_grid(true);
 }
@@ -231,6 +195,7 @@ var DE_up = function () {
  */
 var DE_collide = function (obj)
 {
+  if (obj["type_"]=="source") return;
   // not a shape
   if (!obj["id_"] || obj.type!="rect")
     return;
@@ -277,35 +242,35 @@ var snap_to_grid = function (anim=false)
   });
   // switch
   if (DE_cur_drag) { // fix glitch when calling from DE_add_object() and up()
-  DE_cur_drag["grid_"] = DE_new_pos;
-  cur_id = DE_cur_drag["id_"];
-  if (DE_new_pos > DE_old_pos) {
-  // left -> right
-    for (var i=0; i < DE_target_shapes.length; i++) {
-      pos = DE_target_shapes[i]["grid_"];
-      id_ = DE_target_shapes[i]["id_"];
-      if (id_ == cur_id)
-        continue;
-      if (pos >= DE_old_pos && pos <= DE_new_pos) {
-        DE_target_shapes[i]["grid_"] -= 1;
-      } else {
-        continue;
+    DE_cur_drag["grid_"] = DE_new_pos;
+    cur_id = DE_cur_drag["id_"];
+    if (DE_new_pos > DE_old_pos) {
+    // left -> right
+      for (var i=0; i < DE_target_shapes.length; i++) {
+        pos = DE_target_shapes[i]["grid_"];
+        id_ = DE_target_shapes[i]["id_"];
+        if (id_ == cur_id)
+          continue;
+        if (pos >= DE_old_pos && pos <= DE_new_pos) {
+          DE_target_shapes[i]["grid_"] -= 1;
+        } else {
+          continue;
+        }
+      }
+    } else if (DE_new_pos < DE_old_pos) {
+    // right -> left
+      for (var i=0; i < DE_target_shapes.length; i++) {
+        pos = DE_target_shapes[i]["grid_"];
+        id_ = DE_target_shapes[i]["id_"];
+        if (id_ == cur_id)
+          continue;
+        if (pos >= DE_new_pos && pos <= DE_old_pos) {
+          DE_target_shapes[i]["grid_"] += 1;
+        } else {
+          continue;
+        }
       }
     }
-  } else if (DE_new_pos < DE_old_pos) {
-  // right -> left
-    for (var i=0; i < DE_target_shapes.length; i++) {
-      pos = DE_target_shapes[i]["grid_"];
-      id_ = DE_target_shapes[i]["id_"];
-      if (id_ == cur_id)
-        continue;
-      if (pos >= DE_new_pos && pos <= DE_old_pos) {
-        DE_target_shapes[i]["grid_"] += 1;
-      } else {
-        continue;
-      }
-    }
-  }
   } // ^ fix glitch
   // sort by grid pos
   DE_target_shapes.sort(function(a, b) {
@@ -383,21 +348,34 @@ var DE_make_obj = function (x, text, type)
   sh["id_"] = DE_id;
   DE_shapes_by_id[DE_id] = sh;
   if (type == "target") {
-    sh.drag(DE_move, DE_dragger, DE_up).onDragOver( function(obj) { DE_collide(obj); })
+    sh.drag(DE_move, DE_dragger, DE_up).onDragOver(function(obj) { DE_collide(obj); })
     sh.attr({ cursor: "move" });
     tx.drag(DE_move, DE_dragger, DE_up);
     sh["grid_"] = DE_next_grid;
     sh["grid_tmp_"] = DE_next_grid;
-    sh.click(function() {
+    sh.click(function(e) {
       if (DE_connect_mode) {
         if (DE_connections[DE_conn_str(DE_connect_mode_shape,this)]) {
           DE_rm_conn(DE_connect_mode_shape["id_"], this["id_"]);
         } else {
           DE_make_conn(DE_connect_mode_shape, this);
+          DE_connect_mode_shape.attr({"stroke":DE_ui_align_stroke_hi,"stroke-width":DE_ui_stroke_width_hi});
         }
         DE_connect_mode_shape.attr({"fill-opacity": 0});
         DE_connect_mode = false;
         DE_connect_mode_shape = null;
+      } else { // delete
+        if (e.shiftKey) {
+          var index = DE_rm_mult.indexOf(this);
+          if (index != -1) {
+            DE_rm_mult.splice(index, 1);
+            this.animate({"stroke":"#000"});
+            this.animate({"fill-opacity":0});
+          } else {
+            this.animate({"stroke":"red"});
+            DE_rm_mult.push(this);
+          }
+        }
       }
     });
     DE_target_shapes.push(sh);
@@ -454,7 +432,7 @@ var DE_make_obj = function (x, text, type)
         DE_connect_mode = false;
         DE_connect_mode_shape = null;
       } else {
-        this.animate({"fill-opacity": .5}, 250);
+        this.animate(DE_ui_fill_opacity_hi, 250);
         DE_connect_mode = true;
         DE_connect_mode_shape = this;
       }
@@ -462,6 +440,7 @@ var DE_make_obj = function (x, text, type)
   }
   // mouseover -out
   sh.mouseover(function() {
+    if (DE_dragging) return;
     var idx, other_idx;
     if (this["type_"] == "target") {
       idx = 1;
@@ -541,6 +520,62 @@ var DE_make_objs = function (a, type)
     DE_make_obj(x, a[i], type);
   }
 };
+
+var rm_obj = function(obj)
+{
+  var del = DE_shapes_by_id[obj["id_"]];
+  if (!del)
+    return;
+  var del_grid = del["grid_"]
+  for (key in DE_connections) {
+    if (key.split("-")[1] == obj["id_"]) {
+      DE_rm_conn(key.split("-")[0], key.split("-")[1]);
+    }
+  }
+  var i=DE_data_source.length;
+  for (; i<DE_shapes.length; i++) {
+    if (DE_shapes[i] == obj) {
+      break;
+    }
+  }
+  DE_shapes.splice(i, 1);
+  for (var i=0; i<DE_target_shapes.length; i++) {
+    if (DE_target_shapes[i] == obj) {
+      break;
+    }
+  }
+  DE_target_shapes.splice(i, 1);
+  delete DE_shapes_by_id[obj["id_"]];
+  var x = del.pair;
+  if (x)
+    x.remove();
+  if (del)
+    del.remove();
+  var max = -1;
+  for (var i=0; i<DE_target_shapes.length; i++) {
+    var g = DE_target_shapes[i]["grid_"];
+    if (g > del_grid) {
+      DE_target_shapes[i]["grid_"] -= 1;
+    }
+    if (g > max)
+      max = g;
+  }
+  DE_next_grid = g;
+  if (!DE_next_grid) // empty
+    DE_next_grid = 0;
+  DE_cur_drag = null;
+  snap_to_grid(true);
+  return;
+}
+
+$(document).keypress(function(e){
+  if (DE_rm_mult.length>0 && e.which==0) {
+    for (var i=0; i<DE_rm_mult.length; i++) {
+      rm_obj(DE_rm_mult[i]);
+    }
+    DE_rm_mult = [];
+  }
+});
 
 /******************************************************************************
  *
