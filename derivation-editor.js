@@ -180,7 +180,7 @@ var DE_up = function () {
   if (this.pair.type != "text")
     this.pair.animate({"fill-opacity": 0}, 250);
 
-  snap_to_grid(true);
+  DE_snap_to_grid(true);
 }
 
 /******************************************************************************
@@ -223,7 +223,7 @@ var DE_collide = function (obj)
   obj["grid_tmp_"] = tmp_pos;
 }
 
-var snap_to_grid = function (anim=false)
+var DE_snap_to_grid = function (anim=false)
 {
   // just x coord, y is fixed in drag
   var d = DE_ui_xbegin;
@@ -297,7 +297,7 @@ var snap_to_grid = function (anim=false)
   DE_cur_drag = null;
 }
 
-var DE_debug_snap_to_grid = function () {
+var DE_debug_DE_snap_to_grid = function () {
   var s = "";
   for (var i=0; i<DE_target_shapes.length; i++) {
     s+= DE_target_shapes[i]["id_"] + "@" + DE_target_shapes[i]["grid_"]+" " ;
@@ -366,6 +366,21 @@ var DE_make_obj = function (x, text, type)
             this.animate({"stroke":"red"});
             DE_rm_mult.push(this);
           }
+        } else if(e.ctrlKey) { // add
+          var x = DE_shapes_by_id[this["id_"]].attr("x")+DE_shapes_by_id[this["id_"]].attr("width")
+                  +2*DE_ui_padding;
+          var new_obj = DE_make_obj(x, "test", "target");
+          var new_grid = this["grid_"]+1;
+          new_obj["grid_"] = new_grid;
+          new_obj.pair["grid_"] = new_grid;
+          for (var i=0; i<DE_target_shapes.length; i++) {
+            var sh = DE_target_shapes[i];
+            if (sh!=new_obj && sh["grid_"] >=new_grid) {
+              sh["grid_"] += 1;
+              sh.pair["grid_"] += 1;
+            }
+          }
+          DE_snap_to_grid(true);
         }
       }
     });
@@ -386,7 +401,7 @@ var DE_make_obj = function (x, text, type)
         } else if (e.keyCode == 8) {
         // backspace
           DE_cur_ed_shape.animate({width:DE_cur_ed_shape.getBBox().width-DE_ui_font_width},125);
-          setTimeout(function(){snap_to_grid(true);},125);
+          setTimeout(function(){DE_snap_to_grid(true);},125);
         } else if (e.keyCode == 13) {
         // return
           e.preventDefault();
@@ -394,13 +409,13 @@ var DE_make_obj = function (x, text, type)
           DE_cur_ed_shape.toFront();
           DE_cur_ed.toBack();
           DE_cur_ed_shape.animate({width:DE_cur_ed.getBBox().width+(DE_ui_margin-DE_ui_padding)},125);
-          setTimeout(function(){snap_to_grid(true);},125);
+          setTimeout(function(){DE_snap_to_grid(true);},125);
           DE_edit_mode = false;
         } else {
         // input
           DE_cur_ed_shape.animate({width:(this.value.length*DE_ui_font_width)+2*DE_ui_font_width+2*DE_ui_padding},25);
           setTimeout(function(){
-            snap_to_grid(true);
+            DE_snap_to_grid(true);
             DE_paper.setSize(DE_paper.width+DE_ui_font_width, DE_paper.height);
           },25);
         }
@@ -410,7 +425,7 @@ var DE_make_obj = function (x, text, type)
           DE_cur_ed_shape.toFront();
           DE_cur_ed.toBack();
           DE_cur_ed_shape.animate({width:DE_cur_ed.getBBox().width+(DE_ui_margin-DE_ui_padding)},125);
-          setTimeout(function(){snap_to_grid(true);},125);
+          setTimeout(function(){DE_snap_to_grid(true);},125);
           DE_edit_mode = false;
       }, true);
     });
@@ -475,6 +490,8 @@ var DE_make_obj = function (x, text, type)
   DE_id++;
   if (type == "target")
     DE_next_grid++;
+
+  return sh;
 }
 
 var DE_add_object = function()
@@ -497,7 +514,7 @@ var DE_add_object = function()
   DE_paper.setSize(DE_paper.width+DE_target_shapes[DE_target_shapes.length-1].getBBox().width+DE_ui_margin, DE_paper.height);
 
   DE_cur_drag = null;
-  snap_to_grid(true);
+  DE_snap_to_grid(true);
 }
 
 var DE_make_objs = function (a, type)
@@ -556,7 +573,7 @@ var rm_obj = function(obj)
   if (!DE_next_grid) // empty
     DE_next_grid = 0;
   DE_cur_drag = null;
-  snap_to_grid(true);
+  DE_snap_to_grid(true);
   return;
 }
 
@@ -680,6 +697,7 @@ var DE_init = function ()
   var paper_width  = DE_ui_xbegin+(Math.max(DE_data_source.length,DE_data_target.length)*(DE_ui_margin+DE_ui_padding+avg_box_len)),
       paper_height = DE_ui_ybegin+2*DE_ui_box_height+DE_ui_line_margin;
   DE_paper.setSize(paper_width, paper_height);
+
   // source objs
   DE_make_objs(DE_data_source, "source");
   // target objs
