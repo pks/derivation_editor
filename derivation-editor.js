@@ -23,8 +23,8 @@ var DE_paper,
     DE_ui_font_size       = 14,
     DE_ui_font_width      = -1,
     DE_ui_stroke_width    = 1,
-    DE_ui_stroke_width_hi = 3,
-    DE_ui_align_stroke    = "#ccc",
+    DE_ui_stroke_width_hi = 4,
+    DE_ui_align_stroke    = "#000",
     DE_ui_align_stroke_hi = "#000",
     DE_ui_fill_opacity_hi = { "fill-opacity": .2 },
     DE_ui_text_att  = { "fill": "#000", "stroke": "none",
@@ -132,7 +132,7 @@ var DE_make_conns_from_a = function (align)
 
 /******************************************************************************
  *
- * drag"n drop
+ * drag'n drop
  *
  */
 var DE_dragger = function ()
@@ -166,6 +166,7 @@ var DE_move = function (dx, dy)
   this.attr(att);
   att = { x: this.pair.ox + dx, y: this.pair.oy };
   this.pair.attr(att);
+
   for (key in DE_connections) {
     DE_paper.connection(DE_connections[key]);
   }
@@ -188,6 +189,39 @@ var DE_up = function () {
  * snap-to-grid
  *
  */
+var DE_colldetect = function (dir) // FIXME
+{
+  DE_target_shapes.sort(function(a, b) {
+    return a["grid_"]-b["grid_"];
+  });
+  for (var i=0; i<DE_target_shapes.length; i++) {
+    var a = DE_target_shapes[i];
+    var a_left = a.attr("x");
+    var a_right = a.attr("x")+a.attr("width");
+    if (a["id_"]==DE_cur_drag["id_"])
+      continue;
+    for (var j=0; j<DE_target_shapes.length; j++) {
+      var b = DE_target_shapes[j];
+      if (a["id_"]==b["id_"])
+        continue;
+      if (b["id_"]==DE_cur_drag["id_"])
+        continue;
+      var b_left = b.attr("x");
+      var b_right = b.attr("x")+b.attr("width");
+      if (!(a_left >= b_right || a_right <= b_left)) {
+        //b.attr({"stroke":"green","stroke-width":4});
+        if (a["grid_"] > b["grid_"]) { // a should be right of b
+          a.attr({"x": a.attr("x")+(a_right-b_left)});
+          a.pair.attr({"x": a.pair.attr("x")+(a_right-b_left)});
+        } else {                       // a should be left of b
+          b.attr({"x": a.attr("x")+(a_right-b_left)});
+          b.pair.attr({"x": a.pair.attr("x")+(a_right-b_left)});
+        }
+      }
+    }
+  }
+}
+
 var DE_collide = function (obj)
 {
   if (DE_edit_mode) return;
@@ -197,24 +231,26 @@ var DE_collide = function (obj)
     return;
   if (DE_cur_drag["grid_tmp_"] > obj["grid_tmp_"]) {
   // right -> left
-    if (DE_cur_drag.getBBox().width < obj.getBBox().width &&
+    /*if (DE_cur_drag.getBBox().width < obj.getBBox().width &&
         DE_cur_drag.getBBox().x > (obj.getBBox().x+obj.getBBox().width/1000)) { // ignored tolerance, when
-      return;                                                                // dragging onto shapes
-    }
+      return;                                                                   // dragging onto shapes
+    }*/
     att = { x: obj.attr("x")+DE_cur_drag.getBBox().width+(DE_ui_margin-2*DE_ui_padding) };
     obj.attr(att);
     att = { x: obj.pair.attr("x")+DE_cur_drag.getBBox().width+(DE_ui_margin-2*DE_ui_padding) };
     obj.pair.attr(att);
+    DE_colldetect("rl");
   } else {
   // left -> right
-    if (DE_cur_drag.getBBox().width < obj.getBBox().width &&
+    /*if (DE_cur_drag.getBBox().width < obj.getBBox().width &&
         DE_cur_drag.getBBox().x < (obj.getBBox().x+obj.getBBox().width/1000)) {
       return;
-    }
+    }*/
     att = { x: obj.attr("x")-(DE_cur_drag.getBBox().width+(DE_ui_margin-2*DE_ui_padding)) };
     obj.attr(att);
     att = { x: obj.pair.attr("x")-(DE_cur_drag.getBBox().width+(DE_ui_margin-2*DE_ui_padding)) };
     obj.pair.attr(att);
+    DE_colldetect("lr");
   }
   // grid pos
   DE_new_pos = obj["grid_tmp_"];
@@ -223,7 +259,7 @@ var DE_collide = function (obj)
   obj["grid_tmp_"] = tmp_pos;
 }
 
-var DE_snap_to_grid = function (anim=false)
+var DE_snap_to_grid = function (anim=false, ignore_cur_drag=false)
 {
   // just x coord, y is fixed in drag
   var d = DE_ui_xbegin;
@@ -270,6 +306,8 @@ var DE_snap_to_grid = function (anim=false)
   // fix box layout
   for (var i = 0; i < DE_target_shapes.length; i++) {
     var obj = DE_target_shapes[i];
+    if (DE_cur_drag && ignore_cur_drag && obj["id_"]==DE_cur_drag["id_"])
+      continue;
     if (!obj || !obj.attrs) { // removed
       return;
     }
@@ -294,7 +332,8 @@ var DE_snap_to_grid = function (anim=false)
   }
 
   // now mouseout() can remove highligting
-  DE_cur_drag = null;
+  if (!ignore_cur_drag)
+    DE_cur_drag = null;
 }
 
 var DE_debug_DE_snap_to_grid = function () {
