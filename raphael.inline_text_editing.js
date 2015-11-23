@@ -99,7 +99,7 @@
 				// Prepare input styles
 				var oStyles = {
 					position: 'absolute',
-					background: 'red',
+					background: 'black',
 					left: x-3+'px',
 					top: y-3+'px',
 					width: width+10+'px',
