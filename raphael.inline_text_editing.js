@@ -99,10 +99,10 @@
 				// Prepare input styles
 				var oStyles = {
 					position: 'absolute',
-					background: 'black',
+					background: 'white',
 					left: x-3+'px',
 					top: y-3+'px',
-					width: width+10+'px',
+					width: width+'px',
           "background-color": "rgba(1, f, f, 0.2)",
 					height: height+5+'px',
 					color: subject.attrs.fill,
@@ -180,7 +180,7 @@
 
 				this.input.parentNode.appendChild(tmp);
 
-				this.input.style.width = tmp.offsetWidth+50 + "px";
+				this.input.style.width = tmp.offsetWidth+22 + "px";
 				this.input.style.height = tmp.offsetHeight+5 + "px";
 
 				tmp.parentNode.removeChild(tmp);
