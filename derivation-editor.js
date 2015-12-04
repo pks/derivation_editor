@@ -994,7 +994,7 @@ var DE_extract_data = function ()
     return a["grid_"]-b["grid_"];
   });
   for (var i=0; i<DE_target_shapes.length; i++) {
-    d["target"].push(DE_target_shapes[i].pair.attr("text"));
+    d["target"].push(encodeURIComponent(DE_target_shapes[i].pair.attr("text")));
     ids.push(DE_target_shapes[i]["id_"]);
   }
   // alignment
