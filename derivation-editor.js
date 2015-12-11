@@ -761,7 +761,7 @@ var DE_make_obj = function (x, text, type, grid_pos=null, id=null)
   // meta
   sh["type_"] = type;
   sh["id_"] = id;
-  if (!id) 
+  if (!id)
     sh["id_"] = DE_id;
   DE_shapes_by_id[sh["id_"]] = sh;
   if (type == "target") {
@@ -1398,7 +1398,7 @@ var DE_undo = function ()
 {
   var x = DE_undo_stack.pop();
   if (!x) return;
-  
+
   if (x[0] == "rm") {
     DE_undo_rm(x[1], x[2], x[3], x[4]);
   } else if (x[0] == "edit") {
