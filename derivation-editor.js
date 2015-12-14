@@ -980,6 +980,14 @@ var DE_enter_edit_mode = function (sh, kbd=false)
  * extract data from ui
  *
  */
+var DE_get_raw_svg_data = function()
+{
+  if (DE_paper)
+    return btoa(DE_paper.canvas.innerHTML);
+  else
+    return "";
+}
+
 var DE_extract_data = function ()
 {
   el = document.getElementById("data");
@@ -1013,16 +1021,12 @@ var DE_extract_data = function ()
   }
   // source_raw
   if (DE_data_source_raw) {
-  for (var i=0; i<DE_data_source_raw.length; i++) {
-    d["source_raw"].push(encodeURIComponent(DE_data_source_raw[i]));
+    for (var i=0; i<DE_data_source_raw.length; i++) {
+      d["source_raw"].push(encodeURIComponent(DE_data_source_raw[i]));
+    }
   }
-  }
-
   // image
-  d["svg"] = "";
-  if (DE_paper)
-    d["svg"] = btoa(DE_paper.canvas.innerHTML);
-
+  d["svg"] = DE_get_raw_svg_data();
   // output
   s = JSON.stringify(d);
   el.innerHTML = s;
