@@ -1,17 +1,19 @@
 /*
- * global vars and configuration
+ * Global vars and configuration
  *
  */
 var DE_paper,
-    // objects
-    DE_shapes_by_id  = {},
+///////////////////////////////////////////////////////////////////////////////
+    // Objects
     DE_shapes        = [],
     DE_target_shapes = [],
+    DE_shapes_by_id  = {},
     DE_texts         = [],
     DE_connections   = {},
     DE_id            = 0,
     DE_next_grid     = 0,
-    // ui
+///////////////////////////////////////////////////////////////////////////////
+    // UI
     DE_ui_margin          = 64,
     DE_ui_padding         = DE_ui_margin/3,
     DE_ui_xbegin          = 10,
@@ -22,7 +24,6 @@ var DE_paper,
     DE_ui_ytarget         = DE_ui_ysource+DE_ui_line_margin;
     DE_ui_font_size       = 14,
     DE_ui_font_width      = -1,
-///////////////////////////////////////////////////////////////////////////////
     DE_ui_stroke_width    = 1,
     DE_ui_stroke_width_hi = 3,
     DE_ui_align_stroke    = "#aaa",
@@ -30,43 +31,34 @@ var DE_paper,
     DE_ui_text_att  = { "text-anchor": "start", "font-size": DE_ui_font_size,
                         "font-family": "Times New Roman" },
 ///////////////////////////////////////////////////////////////////////////////
-    // dragging
-    DE_cur_drag = null,
-    DE_dragging = false,
-    DE_new_pos  = -1,
-    DE_old_pos  = -1;
-    // connecting
-    DE_connect_mode       = false,
-    DE_connect_mode_shape = null,
-    DE_new_conns          = [],
-    // editing
-    DE_cur_ed       = null,
-    DE_cur_ed_shape = null,
-    DE_edit_mode    = false,
-    // removing
-    DE_rm_mult  = [],
-    DE_undo_stack = [],
-    // keyboard interface
+    // Keyboard interface
     DE_kbd_focused_phrase = null,
     DE_kbd_move_mode      = false,
     DE_kbd_select_mode    = false,
-    // done
+    // Connecting
+    DE_connect_mode       = false,
+    DE_connect_mode_shape = null,
+    DE_new_conns          = [],
+    // Editing
+    DE_cur_ed       = null,
+    DE_cur_ed_shape = null,
+    DE_edit_mode    = false,
+    // Removing
+    DE_rm_mult  = [],
+    DE_undo_stack = [],
+    // Data
     DE_target_done = [],
     DE_source_done = [],
-    // data
     DE_data_source     = null,
     DE_data_source_raw = null,
     DE_data_target     = null,
-    DE_data_align      = null,
-    // lock
-    DE_locked = false;
+    DE_data_align      = null;
 
 
-/******************************************************************************
- *
- * style
- *
- */
+///////////////////////////////////////////////////////////////////////////////
+//
+// Style
+//
 var ch_style = function (item, shape_att, text_att, anim=false, anim_dur=50)
 {
   if (!anim) {
@@ -83,19 +75,21 @@ var ch_style = function (item, shape_att, text_att, anim=false, anim_dur=50)
 
 var DE_ui_style_normal = function (item, type=null)
 {
+  if (item == DE_connect_mode_shape) {
+    DE_ui_style_mark(item, type);
+    return;
+  }
   if (!item) return;
-  if (!type)
-    type = item["type_"];
-  var to_delete = false;
-  var color = "#fff";
-  var stroke_color = "#aaa";
-  var text_color = "#aaa";
+  if (!type) type = item["type_"];
+  var color              = "#fff";
+  var stroke_color       = "#aaa";
+  var text_color         = "#aaa";
   if (DE_rm_mult.indexOf(item)>-1)
     color = stroke_color = "#f00";
   if (DE_target_done.indexOf(item)>-1) {
-    color = "#aaa";
-    text_color = "#000";
-    stroke_color= "#000";
+    color                = "#aaa";
+    text_color           = "#000";
+    stroke_color         = "#000";
   }
   var shape_att;
   var text_att;
@@ -132,20 +126,22 @@ var DE_ui_style_normal = function (item, type=null)
 
 var DE_ui_style_highlight = function (item, type=null)
 {
-  if (!type)
-    type = item["type_"];
-  var to_delete = false;
-  var color = "#fff";
-  var stroke_color = "#000";
-  var stroke_width = 3;
-  var text_color = "#000";
+  if (item == DE_connect_mode_shape) {
+    DE_ui_style_mark(item, type);
+    return;
+  }
+  if (!type) type = item["type_"];
+  var color              = "#fff";
+  var stroke_color       = "#000";
+  var stroke_width       = 3;
+  var text_color         = "#000";
   if (DE_rm_mult.indexOf(item)>-1)
     color = stroke_color = "#f00";
   if (DE_target_done.indexOf(item)>-1) {
-    color = "#aaa";
-    text_color = "#000";
-    stroke_color = "#000";
-    stroke_width = 3;
+    color                = "#aaa";
+    text_color           = "#000";
+    stroke_color         = "#000";
+    stroke_width         = 3;
   }
   var shape_att;
   var text_att;
@@ -217,11 +213,10 @@ var DE_ui_style_mark = function (item, type=null)
   ch_style(item, shape_att, text_att);
 }
 
-/******************************************************************************
- *
- * connections/links
- *
- */
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Connections
+//
 Raphael.fn.connection = function (obj1, obj2, line, bg)
 {
   if (obj1.line && obj1.from && obj1.to) {
@@ -260,7 +255,7 @@ Raphael.fn.connection = function (obj1, obj2, line, bg)
 
 var DE_conn_str = function (obj1, obj2)
 {
-  return obj1["id_"]+"-"+obj2["id_"];
+  return obj1["id_"] + "-" + obj2["id_"];
 }
 
 var DE_make_conn = function(obj1, obj2)
@@ -269,8 +264,8 @@ var DE_make_conn = function(obj1, obj2)
   if (DE_connect_mode) {
     DE_new_conns.push(DE_connections[DE_conn_str(obj1,obj2)]);
     DE_connections[DE_conn_str(obj1,obj2)].line.attr({
-      "stroke":DE_ui_align_stroke_hi,
-      "stroke-width":DE_ui_stroke_width_hi
+      "stroke"       : DE_ui_align_stroke_hi,
+      "stroke-width" : DE_ui_stroke_width_hi
     });
   }
 }
@@ -292,12 +287,14 @@ var DE_rm_conn = function (id1, id2)
     if (b)
       break;
   }
+
   for (c in DE_connections) {
     a = c.split("-");
     if (id1 == parseInt(a[0]) && parseInt(a[1])==DE_kbd_focused_phrase["id_"])
       return;
   }
-  DE_shapes_by_id[id1].attr({"stroke-width":DE_ui_stroke_width});
+
+  DE_shapes_by_id[id1].attr({"stroke-width" : DE_ui_stroke_width});
 }
 
 var DE_make_conns_from_a = function (align)
@@ -310,170 +307,18 @@ var DE_make_conns_from_a = function (align)
   }
 }
 
-/******************************************************************************
- *
- * drag'n drop
- *
- */
-var DE_dragger = function ()
+///////////////////////////////////////////////////////////////////////////////
+//
+// Snap-to-grid
+//
+var DE_snap_to_grid = function ()
 {
-  if (DE_edit_mode)
-    return;
-  DE_cur_drag = this;
-  DE_dragging = true;
-  // drag shape, not text
-  if (this.type == "text")
-    DE_cur_drag = this.pair;
-  DE_cur_drag.toFront();
-  // remember grid pos
-  DE_old_pos = DE_cur_drag["grid_"];
-  DE_new_pos = DE_cur_drag["grid_"];
-  // remember original coords
-  this.ox = this.attr("x");
-  this.oy = this.attr("y");
-  this.pair.ox = this.pair.attr("x");
-  this.pair.oy = this.pair.attr("y");
-  if (this.type != "text")
-    this.animate(DE_ui_fill_opacity_hi, 250);
-  if (this.pair.type != "text")
-    this.pair.animate(DE_ui_fill_opacity_hi, 250);
-}
-
-var DE_move = function (dx, dy)
-{
-  if (DE_edit_mode) return;
-  var att = { x: this.ox + dx, y: this.oy };
-  this.attr(att);
-  att = { x: this.pair.ox + dx, y: this.pair.oy };
-  this.pair.attr(att);
-
-  for (key in DE_connections) {
-    DE_paper.connection(DE_connections[key]);
-  }
-
-  DE_paper.safari();
-}
-
-var DE_up = function () {
-  DE_dragging = false;
-  if (this.type != "text")
-    this.animate({"fill-opacity": 0}, 250);
-  if (this.pair.type != "text")
-    this.pair.animate({"fill-opacity": 0}, 250);
-
-  DE_snap_to_grid(true);
-}
-
-/******************************************************************************
- *
- * snap-to-grid
- *
- */
-var DE_colldetect = function (dir)
-{
-  DE_target_shapes.sort(function(a, b) {
-    return a["grid_"]-b["grid_"];
-  });
-  for (var i=0; i<DE_target_shapes.length; i++) {
-    var a = DE_target_shapes[i];
-    var a_left = a.attr("x");
-    var a_right = a.attr("x")+a.attr("width");
-    if (a["id_"]==DE_cur_drag["id_"])
-      continue;
-    for (var j=0; j<DE_target_shapes.length; j++) {
-      var b = DE_target_shapes[j];
-      if (a["id_"]==b["id_"])
-        continue;
-      if (b["id_"]==DE_cur_drag["id_"])
-        continue;
-      var b_left = b.attr("x");
-      var b_right = b.attr("x")+b.attr("width");
-      if (!(a_left >= b_right || a_right <= b_left)) { // collision!
-        if (a["grid_"] > b["grid_"]) { // a should be right of b
-          a.attr({"x": a.attr("x")+(a_right-b_left)});
-          a.pair.attr({"x": a.pair.attr("x")+(a_right-b_left)});
-        } else {                       // a should be left of b
-          b.attr({"x": a.attr("x")+(a_right-b_left)});
-          b.pair.attr({"x": a.pair.attr("x")+(a_right-b_left)});
-        }
-      }
-    }
-  }
-}
-
-var DE_collide = function (obj)
-{
-  if (DE_edit_mode) return;
-  if (obj["type_"]=="source") return;
-  // not a shape
-  if (!obj["id_"] || obj.type!="rect")
-    return;
-  if (DE_cur_drag["grid_tmp_"] > obj["grid_tmp_"]) { // right -> left
-    /*if (DE_cur_drag.getBBox().width < obj.getBBox().width &&
-        DE_cur_drag.getBBox().x > (obj.getBBox().x+obj.getBBox().width/1000)) { // ignored tolerance, when
-      return;                                                                   // dragging onto shapes
-    }*/
-    att = { x: obj.attr("x")+DE_cur_drag.getBBox().width+(DE_ui_margin-2*DE_ui_padding) };
-    obj.attr(att);
-    att = { x: obj.pair.attr("x")+DE_cur_drag.getBBox().width+(DE_ui_margin-2*DE_ui_padding) };
-    obj.pair.attr(att);
-    DE_colldetect("rl");
-  } else { // left -> right
-    /*if (DE_cur_drag.getBBox().width < obj.getBBox().width &&
-        DE_cur_drag.getBBox().x < (obj.getBBox().x+obj.getBBox().width/1000)) {
-      return;
-    }*/
-    att = { x: obj.attr("x")-(DE_cur_drag.getBBox().width+(DE_ui_margin-2*DE_ui_padding)) };
-    obj.attr(att);
-    att = { x: obj.pair.attr("x")-(DE_cur_drag.getBBox().width+(DE_ui_margin-2*DE_ui_padding)) };
-    obj.pair.attr(att);
-    DE_colldetect("lr");
-  }
-  // grid pos
-  DE_new_pos = obj["grid_tmp_"];
-  var tmp_pos = DE_cur_drag["grid_tmp_"];
-  DE_cur_drag["grid_tmp_"] = obj["grid_tmp_"];
-  obj["grid_tmp_"] = tmp_pos;
-}
-
-var DE_snap_to_grid = function (anim=false, ignore_cur_drag=false)
-{
-  // just x coord, y is fixed in drag
+  // just x coord, y is fixed
   var d = DE_ui_xbegin;
   // just target objs
   DE_target_shapes.sort(function(a, b) {
     return a["grid_"]-b["grid_"];
   });
-  // switch
-  if (DE_cur_drag) { // fix glitch when calling from DE_add_object() and up()
-    DE_cur_drag["grid_"] = DE_new_pos;
-    cur_id = DE_cur_drag["id_"];
-    if (DE_new_pos > DE_old_pos) { // left -> right
-      for (var i=0; i < DE_target_shapes.length; i++) {
-        pos = DE_target_shapes[i]["grid_"];
-        id_ = DE_target_shapes[i]["id_"];
-        if (id_ == cur_id)
-          continue;
-        if (pos >= DE_old_pos && pos <= DE_new_pos) {
-          DE_target_shapes[i]["grid_"] -= 1;
-        } else {
-          continue;
-        }
-      }
-    } else if (DE_new_pos < DE_old_pos) { // right -> left
-      for (var i=0; i < DE_target_shapes.length; i++) {
-        pos = DE_target_shapes[i]["grid_"];
-        id_ = DE_target_shapes[i]["id_"];
-        if (id_ == cur_id)
-          continue;
-        if (pos >= DE_new_pos && pos <= DE_old_pos) {
-          DE_target_shapes[i]["grid_"] += 1;
-        } else {
-          continue;
-        }
-      }
-    }
-  } // ^ fix glitch
   // sort by grid pos
   DE_target_shapes.sort(function(a, b) {
     return a["grid_"]-b["grid_"];
@@ -481,61 +326,27 @@ var DE_snap_to_grid = function (anim=false, ignore_cur_drag=false)
   // fix box layout
   for (var i = 0; i < DE_target_shapes.length; i++) {
     var obj = DE_target_shapes[i];
-    if (DE_cur_drag && ignore_cur_drag && obj["id_"]==DE_cur_drag["id_"])
-      continue;
     if (!obj || !obj.attrs) { // removed
       return;
     }
     att = { x:d };
-    if (anim) {
-      obj.attr(att);
-    } else {
-      obj.attr(att);
-    }
+    obj.attr(att);
     att = { x: obj.getBBox().x+DE_ui_padding };
-    if (anim) {
-      //obj.pair.animate(att,50);
-      obj.pair.attr(att);
-    } else {
-      obj.pair.attr(att);
-    }
+    obj.pair.attr(att);
     d += obj.getBBox().width+(DE_ui_margin-2*DE_ui_padding);
-    // fix tmp grid
-    obj["grid_tmp_"] = obj["grid_"];
   }
   for (key in DE_connections) {
     DE_paper.connection(DE_connections[key]);
   }
-
-  // now mouseout() can remove highligting
-  if (!ignore_cur_drag)
-    DE_cur_drag = null;
 }
 
-var DE_debug_DE_snap_to_grid = function () {
-  var s = "";
-  for (var i=0; i<DE_target_shapes.length; i++) {
-    s+= DE_target_shapes[i]["id_"] + "@" + DE_target_shapes[i]["grid_"]+" " ;
-  }
-  document.getElementById("debug").innerHTML = s;
-  document.getElementById("debug").innerHTML += " new:"+DE_new_pos + " old:"+DE_old_pos;
-  document.getElementById("debug").innerHTML += " DE_next_grid:"+DE_next_grid;
-}
-
-/******************************************************************************
- *
- * mouseover-out / click events
- *
- */
-DE_item_mouseover = function (item)
+///////////////////////////////////////////////////////////////////////////////
+//
+// Mouseover -out / click events
+//
+var DE_item_mouseover = function (item)
 {
-  if (DE_locked) return;
-  if (DE_dragging) return;
   if (DE_edit_mode) return;
-
-  // fix z-index
-  //this.pair.toBack();
-  //this.toFront();
 
   // reset others
   var not_reset = [];
@@ -570,9 +381,14 @@ DE_item_mouseover = function (item)
   }
   for (c in DE_connections) {
     if (parseInt(c.split("-")[idx]) == item["id_"]) {
-      DE_connections[c].line.attr({"stroke": DE_ui_align_stroke_hi, "stroke-width":DE_ui_stroke_width_hi});
-      if (DE_shapes_by_id[parseInt(c.split("-")[other_idx])] != DE_connect_mode_shape)
-        DE_ui_style_highlight(DE_shapes_by_id[parseInt(c.split("-")[other_idx])]);
+      DE_connections[c].line.attr({
+        "stroke"       : DE_ui_align_stroke_hi,
+        "stroke-width" : DE_ui_stroke_width_hi});
+      if (DE_shapes_by_id[parseInt(c.split("-")[other_idx])]
+            != DE_connect_mode_shape)
+        DE_ui_style_highlight(
+            DE_shapes_by_id[parseInt(c.split("-")[other_idx])]
+        );
     }
   }
 
@@ -580,16 +396,11 @@ DE_item_mouseover = function (item)
     DE_ui_style_highlight(item);
 }
 
-DE_item_mouseout = function (item)
+var DE_item_mouseout = function (item)
 {
-  if (DE_cur_drag) return;
-  if (DE_edit_mode) return; // FIXME
+  if (DE_edit_mode) return;
   if (item == DE_connect_mode_shape) return;
   if (item == DE_kbd_focused_phrase) return;
-
-  // fix z-index
-  //this.pair.toFront();
-  //this.toBack();
 
   var idx, other_idx;
   if (item["type_"] == "target") {
@@ -599,6 +410,7 @@ DE_item_mouseout = function (item)
     idx = 0;
     other_idx = 1;
   }
+
   var aligned_with_focused = false;
   for (c in DE_connections) {
     var align_done = false;
@@ -614,15 +426,20 @@ DE_item_mouseout = function (item)
             break;
           }
         }
-        cc = c; // FIXME WTF
+        var cc = c; // FIXME WTF
         if (!x) {
-          if (!(DE_connect_mode_shape && obj["id_"]==DE_connect_mode_shape["id_"]))
+          if (!(DE_connect_mode_shape
+                && obj["id_"]==DE_connect_mode_shape["id_"]))
             DE_ui_style_normal(obj);
         }
         if (align_done) {
-          DE_connections[cc].line.attr({"stroke-width":DE_ui_stroke_width, "stroke":DE_ui_align_stroke_hi});
+          DE_connections[cc].line.attr({
+            "stroke-width" : DE_ui_stroke_width,
+            "stroke"       : DE_ui_align_stroke_hi});
         } else {
-          DE_connections[cc].line.attr({"stroke-width":DE_ui_stroke_width, "stroke":DE_ui_align_stroke});
+          DE_connections[cc].line.attr({
+            "stroke-width" : DE_ui_stroke_width,
+            "stroke"       : DE_ui_align_stroke});
         }
       } else {
         aligned_with_focused = true;
@@ -631,25 +448,25 @@ DE_item_mouseout = function (item)
   }
   if (!aligned_with_focused)
       DE_ui_style_normal(item);
-  for (var i=0; i<DE_new_conns.length; i++) {
+  for (var i=0; i<DE_new_conns.length; i++)
     DE_new_conns[i].line.attr({"stroke-width":DE_ui_stroke_width});
-  }
   DE_new_conns = [];
 }
 
 var DE_item_click_target = function (e, item)
 {
-  if (DE_locked) return;
   if (DE_target_done.indexOf(item)>-1) return;
   if (DE_connect_mode) {
     if (DE_connections[DE_conn_str(DE_connect_mode_shape,item)]) {
-      DE_undo_stack.push(["rm_conn", DE_connect_mode_shape["id_"], item["id_"]]);
+      DE_undo_stack.push(["rm_conn", DE_connect_mode_shape["id_"],
+          item["id_"]]);
       DE_rm_conn(DE_connect_mode_shape["id_"], item["id_"]);
       DE_ui_style_normal(DE_connect_mode_shape);
     } else {
       DE_ui_style_highlight(DE_connect_mode_shape);
       DE_connect_mode_shape.attr({"fill":"#fff","fill-opacity":1});
-      DE_undo_stack.push(["add_conn", DE_connect_mode_shape["id_"], item["id_"]]);
+      DE_undo_stack.push(["add_conn", DE_connect_mode_shape["id_"],
+          item["id_"]]);
       DE_make_conn(DE_connect_mode_shape, item);
     }
     DE_connect_mode = false;
@@ -669,50 +486,11 @@ var DE_item_click_target = function (e, item)
     if (b)
       DE_connect_mode_shape.attr({"stroke-width":3});
     DE_connect_mode_shape = null;
-  } else { // delete
-    if (e.altKey) {
-      return;
-      if (DE_target_done.indexOf(item)>-1) return;
-      var index = DE_rm_mult.indexOf(item);
-      if (index != -1) {
-        DE_rm_mult.splice(index, 1);
-        for (c in DE_connections) {
-          var i = parseInt(c.split("-")[1]);
-          if (i == item["id_"])
-            DE_connections[c].line.attr({"stroke":"#000"});
-        }
-        DE_ui_style_highlight(item);
-      } else {
-        item.attr({"stroke":"red", "fill":"red"});
-        for (c in DE_connections) {
-          var i = parseInt(c.split("-")[1]);
-          if (i == item["id_"])
-            DE_connections[c].line.attr({"stroke":"#f00"});
-        }
-        DE_rm_mult.push(item);
-      }
-    } else if(e.shiftKey && false) { // add
-      var x = DE_shapes_by_id[item["id_"]].attr("x")+DE_shapes_by_id[item["id_"]].attr("width")
-              +2*DE_ui_padding;
-      var new_obj = DE_make_obj(x, "", "target");
-      var new_grid = item["grid_"]+1;
-      new_obj["grid_"] = new_grid;
-      new_obj.pair["grid_"] = new_grid;
-      for (var i=0; i<DE_target_shapes.length; i++) {
-        var sh = DE_target_shapes[i];
-        if (sh!=new_obj && sh["grid_"] >=new_grid) {
-          sh["grid_"] += 1;
-          sh.pair["grid_"] += 1;
-        }
-      }
-      DE_snap_to_grid(true);
-    }
   }
 }
 
 var DE_item_click_source = function (e, item)
 {
-  if (DE_locked) return;
   if (DE_connect_mode) {
     if (item != DE_connect_mode_shape)
       return;
@@ -729,11 +507,10 @@ var DE_item_click_source = function (e, item)
   }
 }
 
-/******************************************************************************
- *
- * add/remove objects
- *
- */
+///////////////////////////////////////////////////////////////////////////////
+//
+// Add/remove objects
+//
 var DE_make_obj = function (x, text, type, grid_pos=null, id=null)
 {
   var y;
@@ -743,7 +520,8 @@ var DE_make_obj = function (x, text, type, grid_pos=null, id=null)
     y = DE_ui_ytarget;
   }
   // make text obj
-  DE_texts.push(DE_paper.text(x, y+(DE_ui_box_height/2), text).attr(DE_ui_text_att));
+  DE_texts.push(DE_paper.text(x, y+(DE_ui_box_height/2), text)
+      .attr(DE_ui_text_att));
   // make shape obj
   var x_shape = DE_texts[DE_texts.length-1].getBBox().x-DE_ui_padding,
       x_width = DE_texts[DE_texts.length-1].getBBox().width+(2*DE_ui_padding);
@@ -765,16 +543,9 @@ var DE_make_obj = function (x, text, type, grid_pos=null, id=null)
     sh["id_"] = DE_id;
   DE_shapes_by_id[sh["id_"]] = sh;
   if (type == "target") {
-    // :'(
-    //sh.drag(DE_move, DE_dragger, DE_up).onDragOver(function(obj) { DE_collide(obj); })
-    //sh.attr({ cursor: "move" });
-    //tx.drag(DE_move, DE_dragger, DE_up);
     sh["grid_"] = grid_pos;
-    sh["grid_tmp_"] = grid_pos;
-    if (!sh["grid_"]) {
+    if (!sh["grid_"])
       sh["grid_"] = DE_next_grid;
-      sh["grid_tmp_"] = DE_next_grid;
-    }
     sh.click(function(e) {
       DE_item_click_target(e, this);
     });
@@ -810,7 +581,6 @@ var DE_make_obj = function (x, text, type, grid_pos=null, id=null)
     DE_item_mouseover(this.pair);
   });
   tx.mouseout(function() {
-    //DE_item_mouseout(this.pair);
   });
 
   DE_id++;
@@ -844,12 +614,10 @@ var DE_add_object = function()
       +DE_ui_margin,
     DE_paper.height);
 
-  DE_cur_drag = null;
-
   if (DE_target_shapes.length==1)
     DE_kbd_focus_shape(DE_target_shapes[0]);
 
-  DE_snap_to_grid(true);
+  DE_snap_to_grid();
 }
 
 var DE_make_objs = function (a, type)
@@ -908,26 +676,22 @@ var rm_obj = function(obj)
   DE_next_grid = g;
   if (!DE_next_grid) // empty
     DE_next_grid = 0;
-  DE_cur_drag = null;
-  DE_snap_to_grid(true);
+  DE_snap_to_grid();
 
   return;
 }
 
 var DE_enter_edit_mode = function (sh, kbd=false)
 {
-  if (DE_locked) return;
   if (DE_edit_mode) return;
   if (kbd && !DE_kbd_focused_phrase) return;
   if (DE_target_done.indexOf(sh)>-1) return;
   if (DE_rm_mult.indexOf(sh)>-1) return;
   DE_edit_mode = true;
-  //sh.pair.toFront();
-  //sh.toBack();
   DE_cur_ed = sh.pair;
   DE_cur_ed_shape = sh;
   var input = DE_cur_ed.inlineTextEditing.startEditing();
-  var text_before = trim($(DE_cur_ed.node.innerHTML).text())
+  var text_before = $.trim($(DE_cur_ed.node.innerHTML).text())
   var id = sh["id_"];
   input.addEventListener("keypress", function(e) {
     if (e.keyCode==27
@@ -937,49 +701,37 @@ var DE_enter_edit_mode = function (sh, kbd=false)
         || e.keyCode==40) { // esc, arrows, backspace
       return;
     } else if (e.keyCode == 8) { // backspace
-      DE_cur_ed_shape.animate({width:DE_cur_ed_shape.getBBox().width-DE_ui_font_width},50);
-      setTimeout(function(){DE_snap_to_grid(true);},125);
+      DE_cur_ed_shape.animate({
+        width:DE_cur_ed_shape.getBBox().width-DE_ui_font_width},50);
+      setTimeout(function(){DE_snap_to_grid();},125);
     } else if (e.keyCode == 13) { // return
       e.preventDefault();
       e.stopPropagation();
       DE_cur_ed.inlineTextEditing.stopEditing();
-      //DE_cur_ed_shape.toFront();
-      //DE_cur_ed.toBack();
-      DE_cur_ed_shape.animate({width:DE_cur_ed.getBBox().width+(DE_ui_margin-DE_ui_padding)},50);
-      setTimeout(function(){DE_snap_to_grid(true);},50);
+      DE_cur_ed_shape.animate({
+        width:DE_cur_ed.getBBox().width+(DE_ui_margin-DE_ui_padding)},50);
+      setTimeout(function(){DE_snap_to_grid();},50);
       DE_edit_mode = false;
-      var text_now = trim($(DE_cur_ed.node.innerHTML).text())
+      var text_now = $.trim($(DE_cur_ed.node.innerHTML).text())
       if (text_before != text_now) {
         DE_undo_stack.push(["edit", id, text_before]);
       }
     } else { // input
-      DE_cur_ed_shape.animate({width:(this.value.length*DE_ui_font_width)+2*DE_ui_font_width+2*DE_ui_padding},25);
+      DE_cur_ed_shape.animate({
+        width:(this.value.length*DE_ui_font_width)
+          +2*DE_ui_font_width+2*DE_ui_padding},25);
       setTimeout(function(){
-        DE_snap_to_grid(true);
+        DE_snap_to_grid();
         DE_paper.setSize(DE_paper.width+DE_ui_font_width, DE_paper.height);
       },25);
     }
   });
-  /*input.addEventListener("blur", function(e) {
-      DE_cur_ed.inlineTextEditing.stopEditing();
-      //DE_cur_ed_shape.toFront();
-      //DE_cur_ed.toBack();
-      DE_cur_ed_shape.animate({width:DE_cur_ed.getBBox().width+(DE_ui_margin-DE_ui_padding)},125);
-      //setTimeout(function(){DE_snap_to_grid(true);},125);
-      DE_edit_mode = false;
-
-      var text_now = trim($(DE_cur_ed.node.innerHTML).text())
-      if (text_before != text_now) {
-        DE_undo_stack.push(["edit", id, text_before]);
-      }
-  }, true);*/
 }
 
-/******************************************************************************
- *
- * extract data from ui
- *
- */
+///////////////////////////////////////////////////////////////////////////////
+//
+// Extract data from ui
+//
 var DE_get_raw_svg_data = function()
 {
   if (DE_paper)
@@ -992,17 +744,22 @@ var DE_extract_data = function ()
 {
   el = document.getElementById("data");
   d = {};
-  d["source"] = [];
+  d["source"]     = [];
   d["source_raw"] = [];
-  d["target"] = [];
-  d["align"]  = [];
+  d["target"]     = [];
+  d["align"]      = [];
   // target
   var ids = [];
   DE_target_shapes.sort(function(a, b) {
     return a["grid_"]-b["grid_"];
   });
   for (var i=0; i<DE_target_shapes.length; i++) {
-    d["target"].push(encodeURIComponent(DE_target_shapes[i].pair.attr("text")));
+    var s = encodeURIComponent(DE_target_shapes[i].pair.attr("text"))
+    if ($.trim(s)== "") {
+      alert("Please remove any empty target phrases before submission.");
+      return null;
+    }
+    d["target"].push(s);
     ids.push(DE_target_shapes[i]["id_"]);
   }
   // alignment
@@ -1034,11 +791,10 @@ var DE_extract_data = function ()
   return s;
 }
 
-/******************************************************************************
- *
- * reset/init
- *
- */
+///////////////////////////////////////////////////////////////////////////////
+//
+// Initialize/reset
+//
 var DE_reset = function()
 {
   if (!data) return;
@@ -1056,14 +812,13 @@ var DE_reset = function()
     DE_paper.remove();
   }
 
-  DE_shapes_by_id       = {};
   DE_shapes             = [];
   DE_target_shapes      = [];
+  DE_shapes_by_id       = {};
   DE_texts              = [];
   DE_connections        = {};
   DE_id                 = 0;
   DE_next_grid          = 0;
-  DE_cur_drag           = null;
   DE_edit_mode          = false;
   DE_cur_ed             = null;
   DE_cur_ed_shape       = null;
@@ -1073,7 +828,6 @@ var DE_reset = function()
   DE_kbd_move_mode      = false;
   DE_kbd_select_mode    = false;
   DE_target_done        = [];
-  DE_locked             = false;
   DE_undo_stack         = [];
 
   document.getElementById("holder").parentElement.removeChild(
@@ -1122,16 +876,15 @@ var DE_init = function ()
   // initial connections from alignment
   DE_make_conns_from_a(DE_data_align);
 
-  // kbd interace
+  // keyboard interace
   DE_kbd_start_interface();
 }
 
-/******************************************************************************
- * keyboard interface
- *
- */
+///////////////////////////////////////////////////////////////////////////////
+//
+// Keyboard interface
+//
 document.onkeypress = function (e) {
-  if (DE_locked) return;
   if (DE_edit_mode) return;
 
   e = e || window.event;
@@ -1166,8 +919,9 @@ document.onkeypress = function (e) {
 
   if (char_str == "A") { // add
     if (DE_target_shapes.length > 0) {
-      var x = DE_kbd_focused_phrase.attr("x")+DE_kbd_focused_phrase.attr("width")
-              +2*DE_ui_padding;
+      var x = DE_kbd_focused_phrase.attr("x")
+        +DE_kbd_focused_phrase.attr("width")
+          +2*DE_ui_padding;
       var new_obj = DE_make_obj(x, "", "target");
       var new_grid = DE_kbd_focused_phrase["grid_"]+1;
       new_obj["grid_"] = new_grid;
@@ -1183,7 +937,7 @@ document.onkeypress = function (e) {
       var new_obj = DE_make_obj(0, "", "target");
       DE_kbd_focus_shape(new_obj);
     }
-    DE_snap_to_grid(true);
+    DE_snap_to_grid();
   } else if (char_str == "U") {
     DE_undo();
   } else if (char_str == "M") { // move mode
@@ -1223,7 +977,8 @@ document.onkeypress = function (e) {
     } else {
       var d = DE_kbd_focused_phrase;
       if (DE_target_done.indexOf(d) > -1) return;
-      DE_kbd_focused_phrase = DE_kbd_get_next_to("right", DE_kbd_focused_phrase);
+      DE_kbd_focused_phrase = DE_kbd_get_next_to("right",
+          DE_kbd_focused_phrase);
       if (!DE_kbd_focused_phrase) {
         DE_kbd_focused_phrase = DE_kbd_get_next_to("left", d);
       }
@@ -1235,8 +990,11 @@ document.onkeypress = function (e) {
           connected_source_phrases.push(DE_connections[c].from);
       }
       if (d) {
-        DE_undo_stack.push(["rm", d["grid_"], d["id_"], $(d.pair.node.innerHTML).text(),
-                            connected_source_phrases]);
+        DE_undo_stack.push([
+            "rm", d["grid_"], d["id_"],
+            $(d.pair.node.innerHTML).text(),
+            connected_source_phrases
+        ]);
         rm_obj(d);
       }
     }
@@ -1278,7 +1036,8 @@ var DE_kbd_get_next_to = function(dir, shape)
   for (var i=0; i<DE_target_shapes.length; i++)
     grid_pos.push(DE_target_shapes[i]["grid_"]);
   var at = grid_pos.indexOf(shape["grid_"]);
-  if ((at==0 && dir=="left") || (at==DE_target_shapes.length-1 && dir=="right"))
+  if ((at==0 && dir=="left")
+      || (at==DE_target_shapes.length-1 && dir=="right"))
     return;
 
   var obj = null;
@@ -1309,9 +1068,13 @@ var DE_kbd_focus_shape = function(obj, obj2=null)
     if (DE_target_done.indexOf(DE_shapes_by_id[parseInt(c.split("-")[1])])>-1)
       align_done = true;
     if (align_done) {
-      DE_connections[c].line.attr({"stroke-width":DE_ui_stroke_width, "stroke":DE_ui_align_stroke_hi});
+      DE_connections[c].line.attr({
+        "stroke-width":DE_ui_stroke_width, "stroke":DE_ui_align_stroke_hi
+      });
     } else {
-      DE_connections[c].line.attr({"stroke-width":DE_ui_stroke_width, "stroke":DE_ui_align_stroke});
+      DE_connections[c].line.attr({
+        "stroke-width":DE_ui_stroke_width, "stroke":DE_ui_align_stroke
+      });
     }
   }
   for (sh in DE_shapes_by_id)
@@ -1323,8 +1086,11 @@ var DE_kbd_focus_shape = function(obj, obj2=null)
   DE_ui_style_highlight(obj);
   for (c in DE_connections) {
     if (parseInt(c.split("-")[1]) == DE_kbd_focused_phrase["id_"]) {
-      DE_connections[c].line.attr({"stroke-width":DE_ui_stroke_width_hi,"stroke":DE_ui_align_stroke_hi});
-      DE_ui_style_highlight(DE_shapes_by_id[parseInt(c.split("-")[0])], "source");
+      DE_connections[c].line.attr({
+        "stroke-width" : DE_ui_stroke_width_hi,
+        "stroke"       : DE_ui_align_stroke_hi});
+      DE_ui_style_highlight(DE_shapes_by_id[parseInt(c.split("-")[0])],
+          "source");
     }
   }
   if (obj2)
@@ -1344,7 +1110,8 @@ var DE_kbd_swap = function(dir="right", shape)
   for (var i=0; i<DE_target_shapes.length; i++)
     grid_pos.push(DE_target_shapes[i]["grid_"]);
   var at = grid_pos.indexOf(shape["grid_"]);
-  if ((at == 0 && dir=="left") || (at == DE_target_shapes.length-1 && dir=="right"))
+  if ((at == 0 && dir=="left")
+      || (at == DE_target_shapes.length-1 && dir=="right"))
     return;
 
   var obj = null;
@@ -1356,24 +1123,46 @@ var DE_kbd_swap = function(dir="right", shape)
 
   // right -> left
   if (dir == "left") {
-    att = { x: obj.attr("x")+shape.getBBox().width+(DE_ui_margin-2*DE_ui_padding) };
+    att = {
+      x: obj.attr("x")+shape.getBBox().width
+        +(DE_ui_margin-2*DE_ui_padding)
+    };
     obj.attr(att);
-    att = { x: obj.pair.attr("x")+shape.getBBox().width+(DE_ui_margin-2*DE_ui_padding) };
+    att = { x: obj.pair.attr("x")+shape.getBBox().width
+      +(DE_ui_margin-2*DE_ui_padding)
+    };
     obj.pair.attr(att);
 
-    att = { x: shape.attr("x")-(obj.getBBox().width+(DE_ui_margin-2*DE_ui_padding)) };
+    att = {
+      x: shape.attr("x")-(obj.getBBox().width
+        +(DE_ui_margin-2*DE_ui_padding))
+    };
     shape.attr(att);
-    att = { x: shape.pair.attr("x")-(obj.getBBox().width+(DE_ui_margin-2*DE_ui_padding)) };
+    att = {
+      x: shape.pair.attr("x")-(obj.getBBox().width
+        +(DE_ui_margin-2*DE_ui_padding))
+    };
     shape.pair.attr(att);
   } else { // right
-    att = { x: obj.attr("x")-(shape.getBBox().width+(DE_ui_margin-2*DE_ui_padding)) };
+    att = {
+      x: obj.attr("x")-(shape.getBBox().width
+        +(DE_ui_margin-2*DE_ui_padding))
+    };
     obj.attr(att);
-    att = { x: obj.pair.attr("x")-(shape.getBBox().width+(DE_ui_margin-2*DE_ui_padding)) };
+    att = {
+      x: obj.pair.attr("x")-(shape.getBBox().width
+        +(DE_ui_margin-2*DE_ui_padding))
+    };
     obj.pair.attr(att);
 
-    att = { x: shape.attr("x")+(obj.getBBox().width+(DE_ui_margin-2*DE_ui_padding)) };
+    att = {
+      x: shape.attr("x")+(obj.getBBox().width+(DE_ui_margin-2*DE_ui_padding))
+    };
     shape.attr(att);
-    att = { x: shape.pair.attr("x")+(obj.getBBox().width+(DE_ui_margin-2*DE_ui_padding)) };
+    att = {
+      x: shape.pair.attr("x")
+        +(obj.getBBox().width+(DE_ui_margin-2*DE_ui_padding))
+    };
     shape.pair.attr(att);
   }
 
@@ -1393,11 +1182,10 @@ var DE_kbd_start_interface = function ()
   DE_kbd_select_mode = true;
 }
 
-/******************************************************************************
- *
- * undo/redo
- *
- */
+///////////////////////////////////////////////////////////////////////////////
+//
+// Undo/redo
+//
 var DE_undo = function ()
 {
   var x = DE_undo_stack.pop();
@@ -1410,7 +1198,9 @@ var DE_undo = function ()
   } else if (x[0] == "rm_conn") {
     DE_make_conn(DE_shapes_by_id[x[1]], DE_shapes_by_id[x[2]]);
     if (DE_shapes_by_id[x[2]] == DE_kbd_focused_phrase) {
-      DE_connections[x[1]+"-"+x[2]].line.attr({"stroke":"#000","stroke-width":DE_ui_stroke_width_hi});
+      DE_connections[x[1]+"-"+x[2]].line.attr({
+        "stroke"       : "#000",
+        "stroke-width" : DE_ui_stroke_width_hi});
       DE_ui_style_highlight(DE_shapes_by_id[x[1]]);
     }
   } else if (x[0] == "add_conn") {
