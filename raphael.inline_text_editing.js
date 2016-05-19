@@ -75,7 +75,8 @@
 				var originalBbox  = subject._getBBox();
 				var width         = originalBbox.width;
 				var height        = originalBbox.height;
-				var x             = container.offsetLeft + subject.attrs.x + translateX;
+				var x             = container.offsetLeft + originalBbox.x + translateX;
+        x -= $("#holder").scrollLeft();
 				var y             = container.offsetTop + subject.attrs.y - height / 2 + translateY;
 				var sTransform    = '';
 				var sOrigin       = 'center center';
@@ -95,7 +96,6 @@
 				// Re-apply stored transformation to the element and hide it
 				subject.node.setAttribute("transform", matrix);
 				subject.hide();
-
 				// Prepare input styles
 				var oStyles = {
 					position: 'absolute',
@@ -144,6 +144,9 @@
 				this.input = document.createElement("textarea");
 				this.input.value = subject.attrs.text ? subject.attrs.text.replace(/\'/g,"\\\'") : '';
 				this.input.setAttribute("style", sStyles);
+        this.input.addEventListener('keypress', function () {
+          DE_count_kbd += 1;
+        });
 
 				this.input.addEventListener('keyup', this._handleKeyDown.bind(this));
 
