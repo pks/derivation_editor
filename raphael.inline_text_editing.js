@@ -75,7 +75,8 @@
 				var originalBbox  = subject._getBBox();
 				var width         = originalBbox.width;
 				var height        = originalBbox.height;
-				var x             = container.offsetLeft + originalBbox.x + translateX;
+				//var x             = container.offsetLeft + originalBbox.x + translateX;
+				var x             = container.offsetLeft + subject.attrs.x + translateX;
         x -= $("#holder").scrollLeft();
 				var y             = container.offsetTop + subject.attrs.y - height / 2 + translateY;
 				var sTransform    = '';
