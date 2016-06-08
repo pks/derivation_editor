@@ -818,7 +818,7 @@ var DE_extract_data = function ()
 //
 // Initialize/reset
 //
-var DE_reset = function()
+var DE_reset = function(reset_meta=true)
 {
   if (DE_ui_lock) return;
   if (!data) return;
@@ -853,8 +853,10 @@ var DE_reset = function()
   DE_kbd_select_mode    = false;
   DE_target_done        = [];
   DE_undo_stack         = [];
-  DE_count_click        = 0;
-  DE_count_kbd          = 0;
+  if (reset_meta) {
+    DE_count_click        = 0;
+    DE_count_kbd          = 0;
+  }
 
   document.getElementById("holder").parentElement.removeChild(
     document.getElementById("holder")
@@ -865,7 +867,7 @@ var DE_reset = function()
   $("#derivation_editor").prepend(new_holder);
 }
 
-var DE_init = function ()
+var DE_init = function (reset_meta=true)
 {
   if (!data) return;
   DE_reset();
