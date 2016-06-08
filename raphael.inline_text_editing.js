@@ -103,7 +103,7 @@
 					background: 'white',
 					left: x-3+'px',
 					top: y-3+'px',
-					width: width+'px',
+					width: (width+25)+'px',
           "background-color": "rgba(1, f, f, 0.2)",
 					height: height+5+'px',
 					color: subject.attrs.fill,
@@ -180,11 +180,11 @@
 				tmp.style.height      = null;
 				tmp.style.width       = null;
 				tmp.style.visibility  = 'hidden';
-				tmp.innerHTML         = text.split('\n').join('<br />');
+				tmp.innerHTML         = text.split('\n').join(' ');
 
 				this.input.parentNode.appendChild(tmp);
 
-				this.input.style.width = tmp.offsetWidth+22 + "px";
+				this.input.style.width = tmp.offsetWidth+25 + "px";
 				this.input.style.height = tmp.offsetHeight+5 + "px";
 
 				tmp.parentNode.removeChild(tmp);
