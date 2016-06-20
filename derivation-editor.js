@@ -758,6 +758,11 @@ var DE_get_raw_svg_data = function()
     return "";
 }
 
+var safe_str = function (s)
+{
+  return encodeURIComponent(JSON.stringify(s)).replace(/^%22/,"").replace(/%22$/,"");
+}
+
 var DE_extract_data = function ()
 {
   el = document.getElementById("data");
@@ -772,11 +777,11 @@ var DE_extract_data = function ()
     return a["grid_"]-b["grid_"];
   });
   for (var i=0; i<DE_target_shapes.length; i++) {
-    var s = encodeURIComponent(DE_target_shapes[i].pair.attr("text"))
-    if ($.trim(s)== "") {
+    if ($.trim(DE_target_shapes[i].pair.attr("text"))== "") {
       alert("Please remove any empty target phrases before submission.");
       return null;
     }
+    var s = safe_str((DE_target_shapes[i].pair.attr("text")));
     d["target"].push(s);
     ids.push(DE_target_shapes[i]["id_"]);
   }
@@ -789,7 +794,7 @@ var DE_extract_data = function ()
   // source
   for (var i=0; i<DE_shapes.length; i++) {
     if (DE_shapes[i]["type_"] == "source") {
-      d["source"].push(encodeURIComponent(DE_shapes[i].pair.attr("text")));
+      d["source"].push(safe_str(DE_shapes[i].pair.attr("text")));
     } else {
       break;
     }
@@ -797,7 +802,7 @@ var DE_extract_data = function ()
   // source_raw
   if (DE_data_source_raw) {
     for (var i=0; i<DE_data_source_raw.length; i++) {
-      d["source_raw"].push(encodeURIComponent(DE_data_source_raw[i]));
+      d["source_raw"].push(safe_str(DE_data_source_raw[i]));
     }
   }
   // image
