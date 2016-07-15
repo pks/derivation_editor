@@ -1121,6 +1121,7 @@ var isOnScreen = function(obj)
 
 var check_isOnScreen = function (obj)
 {
+  if (DE_target_shapes.length<2) return;
   var x = isOnScreen(obj)
   while (x < 2) {
     if (x == 0) {
